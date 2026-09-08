@@ -1,0 +1,26 @@
+# Shared defaults. Individual configs copy the relevant keys (no YAML inheritance, keeps runs
+# self-contained and reproducible from the saved config.yaml alone).
+seed: 0
+runs_dir: runs
+
+data:
+  root: data/sen1floods11
+  bands: [B2, B3, B4, B8A, B11, B12]   # Prithvi order; U-Nets can use any subset of the 13 S2 bands
+  use_s1: false
+  train_fraction: 1.0
+  # Filled by scripts/compute_stats.py (per-band mean/std over the training split):
+  mean: null
+  std: null
+
+train:
+  epochs: 50
+  batch_size: 8
+  eval_batch_size: 4
+  crop_size: 224
+  lr: 1.0e-3
+  weight_decay: 0.01
+  warmup_steps: 100
+  grad_clip: 1.0
+  amp: true
+  num_workers: 4
+  class_weights: null          # e.g. [1.0, 2.0] to upweight water
