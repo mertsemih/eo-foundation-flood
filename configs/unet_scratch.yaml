@@ -1,0 +1,30 @@
+seed: 0
+runs_dir: runs
+
+model:
+  tag: unet_scratch
+  name: unet
+  encoder: resnet34
+  encoder_weights: null
+  num_classes: 2
+
+data:
+  root: data/sen1floods11
+  bands: [B2, B3, B4, B8A, B11, B12]
+  use_s1: false
+  train_fraction: 1.0
+  mean: null
+  std: null
+
+train:
+  epochs: 50
+  batch_size: 8
+  eval_batch_size: 4
+  crop_size: 224
+  lr: 1.0e-3
+  weight_decay: 0.01
+  warmup_steps: 100
+  grad_clip: 1.0
+  amp: true
+  num_workers: 4
+  class_weights: null

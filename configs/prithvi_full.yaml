@@ -1,0 +1,34 @@
+seed: 0
+runs_dir: runs
+
+model:
+  tag: prithvi_full
+  name: prithvi
+  backbone: prithvi_eo_v2_300
+  pretrained: true
+  finetune: full
+  feature_layers: [-4, -3, -2, -1]
+  img_size: 224
+  num_classes: 2
+
+data:
+  root: data/sen1floods11
+  bands: [B2, B3, B4, B8A, B11, B12]
+  use_s1: false
+  train_fraction: 1.0
+  mean: null
+  std: null
+
+train:
+  epochs: 50
+  batch_size: 4               # 300M ViT-L with full gradients; lower if OOM
+  eval_batch_size: 2
+  crop_size: 224
+  lr: 1.0e-3
+  backbone_lr_mult: 0.05
+  weight_decay: 0.05
+  warmup_steps: 200
+  grad_clip: 1.0
+  amp: true
+  num_workers: 4
+  class_weights: null

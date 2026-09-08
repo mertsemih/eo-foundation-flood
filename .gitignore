@@ -1,0 +1,32 @@
+# data & artifacts
+data/
+runs/
+wandb/
+*.pt
+*.pth
+*.ckpt
+*.tif
+*.tiff
+*.npy
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# notebooks
+.ipynb_checkpoints/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
