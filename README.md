@@ -19,7 +19,7 @@ The experiment matrix is fixed up front (see [docs/PLAN.md](docs/PLAN.md)) so re
 ## Status
 
 - [x] Repository skeleton, config-driven training loop, metrics, tests
-- [ ] Dataset downloaded and band statistics computed (`scripts/compute_stats.py`)
+- [x] Dataset downloaded and band statistics computed (`scripts/compute_stats.py`)
 - [ ] U-Net baselines (week 3)
 - [ ] Prithvi frozen / LoRA / full (weeks 4–6)
 - [ ] Low-label sweep + Bolivia OOD (weeks 7–9)
@@ -42,7 +42,7 @@ Python 3.10+ and a CUDA GPU are assumed for training. CPU is enough for the test
 Sen1Floods11 (Bonafilia et al., 2020) — 446 hand-labeled 512×512 chips over 11 flood events, with Sentinel-1 (VV, VH), Sentinel-2 (13 bands) and a binary water label (`-1` = no data, `0` = no water, `1` = water). Official train/valid/test/Bolivia splits are shipped with the dataset.
 
 ```bash
-python scripts/download_sen1floods11.py --root data/sen1floods11     # needs gcloud CLI, ~4 GB
+python scripts/download_sen1floods11.py --root data/sen1floods11     # public bucket over HTTPS, ~1.8 GB, no account needed
 python scripts/compute_stats.py --root data/sen1floods11             # per-band mean/std -> configs/data/stats.yaml
 ```
 

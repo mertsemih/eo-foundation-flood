@@ -1,30 +1,46 @@
 seed: 0
 runs_dir: runs
-
 model:
   tag: unet_scratch
   name: unet
   encoder: resnet34
   encoder_weights: null
   num_classes: 2
-
 data:
   root: data/sen1floods11
-  bands: [B2, B3, B4, B8A, B11, B12]
+  bands:
+  - B2
+  - B3
+  - B4
+  - B8A
+  - B11
+  - B12
   use_s1: false
   train_fraction: 1.0
-  mean: null
-  std: null
-
+  cache: true
+  mean:
+  - 1396.0347
+  - 1364.0612
+  - 1218.2285
+  - 3077.4822
+  - 2030.6476
+  - 1179.1661
+  std:
+  - 739.0945
+  - 735.2482
+  - 864.9367
+  - 1196.4426
+  - 980.8706
+  - 764.6084
 train:
   epochs: 50
   batch_size: 8
   eval_batch_size: 4
   crop_size: 224
-  lr: 1.0e-3
+  lr: 0.001
   weight_decay: 0.01
   warmup_steps: 100
   grad_clip: 1.0
   amp: true
-  num_workers: 4
+  num_workers: 0
   class_weights: null

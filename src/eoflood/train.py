@@ -36,18 +36,16 @@ def make_loaders(cfg: dict):
     t = cfg["train"]
     aug = Compose([RandomCrop(t.get("crop_size", 224)), RandomFlipRotate()])
     ds = build_datasets(cfg, train_transform=aug)
-    nw = t.get("num_workers", 4)
+    # With data.cache=true the chips live in RAM and num_workers=0 is the right choice on
+    # Windows (spawned workers would each receive a pickled copy of the cache). Persistent
+    # workers avoid the per-epoch respawn cost when workers are used.
+    nw = t.get("num_workers", 0)
+    kw = dict(num_workers=nw, pin_memory=True, persistent_workers=nw > 0)
     loaders = {
-        "train": DataLoader(
-            ds["train"], batch_size=t["batch_size"], shuffle=True, num_workers=nw,
-            pin_memory=True, drop_last=True,
-        )
+        "train": DataLoader(ds["train"], batch_size=t["batch_size"], shuffle=True, drop_last=True, **kw)
     }
     for split in ("valid", "test", "bolivia"):
-        loaders[split] = DataLoader(
-            ds[split], batch_size=t.get("eval_batch_size", 4), shuffle=False, num_workers=nw,
-            pin_memory=True,
-        )
+        loaders[split] = DataLoader(ds[split], batch_size=t.get("eval_batch_size", 4), shuffle=False, **kw)
     return ds, loaders
 
 

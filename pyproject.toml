@@ -29,6 +29,13 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.4",
 ]
+analysis = [
+    "pandas>=2.0",
+    "matplotlib>=3.8",
+    "jupyter",
+    "nbformat>=5.9",
+    "nbconvert>=7.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -37,6 +44,7 @@ where = ["src"]
 line-length = 100
 target-version = "py310"
 src = ["src", "tests", "scripts"]
+exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
