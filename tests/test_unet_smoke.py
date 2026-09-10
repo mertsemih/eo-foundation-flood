@@ -27,3 +27,12 @@ def test_train_step_decreases_loss():
         opt.step()
         losses.append(loss.item())
     assert losses[-1] < losses[0]
+
+
+def test_resolve_epochs_keeps_step_budget():
+    from eoflood.train import resolve_epochs
+
+    assert resolve_epochs({"epochs": 50}, 31) == 50
+    assert resolve_epochs({"epochs": 50, "total_steps": 1550}, 31) == 50
+    assert resolve_epochs({"epochs": 50, "total_steps": 1550}, 3) == 517   # 10 % labels
+    assert resolve_epochs({"epochs": 50, "total_steps": 1550}, 1) == 1550  # 5 % labels

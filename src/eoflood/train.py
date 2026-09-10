@@ -70,6 +70,19 @@ def build_optimizer(model: nn.Module, cfg: dict) -> torch.optim.Optimizer:
     return torch.optim.AdamW(groups, weight_decay=t.get("weight_decay", 0.01))
 
 
+def resolve_epochs(t: dict, steps_per_epoch: int) -> int:
+    """Number of epochs to run.
+
+    If ``train.total_steps`` is set, every run gets the same optimizer-step budget regardless
+    of how many training chips it has (label-fraction runs would otherwise get proportionally
+    fewer updates). Otherwise ``train.epochs`` is used as-is.
+    """
+    total = t.get("total_steps")
+    if total:
+        return max(1, math.ceil(total / max(1, steps_per_epoch)))
+    return int(t["epochs"])
+
+
 def cosine_with_warmup(optimizer, warmup_steps: int, total_steps: int):
     def f(step):
         if step < warmup_steps:
@@ -108,7 +121,12 @@ def main(argv: list[str] | None = None) -> None:
     )
     optimizer = build_optimizer(model, cfg)
     steps_per_epoch = len(loaders["train"])
-    total_steps = steps_per_epoch * t["epochs"]
+    epochs = resolve_epochs(t, steps_per_epoch)
+    total_steps = steps_per_epoch * epochs
+    # Validate ~evals_per_run times per run so long low-label runs (hundreds of short epochs)
+    # do not spend most of their time evaluating; the last epoch is always evaluated.
+    eval_every = max(1, epochs // int(t.get("evals_per_run", 50)))
+    print(f"[{name}] steps/epoch={steps_per_epoch} epochs={epochs} total steps={total_steps} eval every {eval_every} epochs")
     scheduler = cosine_with_warmup(optimizer, t.get("warmup_steps", steps_per_epoch), total_steps)
     amp = t.get("amp", True) and device.type == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=amp)
@@ -117,7 +135,7 @@ def main(argv: list[str] | None = None) -> None:
     best_iou, best_epoch = -1.0, -1
     t0 = time.time()
 
-    for epoch in range(t["epochs"]):
+    for epoch in range(epochs):
         model.train()
         loss_sum, n = 0.0, 0
         for x, y in tqdm(loaders["train"], desc=f"epoch {epoch}", leave=False):
@@ -135,6 +153,8 @@ def main(argv: list[str] | None = None) -> None:
             loss_sum += loss.item() * x.shape[0]
             n += x.shape[0]
 
+        if (epoch + 1) % eval_every and epoch != epochs - 1:
+            continue
         val = evaluate(model, loaders["valid"], device, amp)
         row = {"epoch": epoch, "train_loss": loss_sum / max(1, n), "lr": optimizer.param_groups[0]["lr"]}
         row.update({f"val_{k}": v for k, v in val.items()})
@@ -151,6 +171,8 @@ def main(argv: list[str] | None = None) -> None:
     model.load_state_dict(torch.load(out / "best.pt", map_location=device)["model"])
     final = {
         "best_epoch": best_epoch,
+        "epochs": epochs,
+        "total_steps": total_steps,
         "best_val_water_iou": best_iou,
         "trainable_params": trainable,
         "total_params": total,
