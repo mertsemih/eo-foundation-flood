@@ -1,6 +1,6 @@
 # data & artifacts
-data/
-runs/
+/data/
+/runs/
 wandb/
 *.pt
 *.pth
