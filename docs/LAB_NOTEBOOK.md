@@ -52,3 +52,18 @@ Template:
 
 - Broke / surprised me: **the low-label regime is not hard for a U-Net on this dataset.** With the same number of updates, 13 chips give test IoU 0.78-0.80 vs 0.81-0.82 with 252 chips. Water is spectrally distinctive in B8A/B11/B12, so a few chips already cover the concept. Consequences: (1) claim 2 ("gap widens below 10 %") may not hold at 5 %; we should extend the sweep to 2 % (5 chips) and 1 % (2-3 chips) where the U-Net presumably breaks; (2) one-seed differences of 0.02-0.04 are within what looks like run-to-run noise (val IoU wobbles ±0.1 between epochs), so seeds 1-2 are needed before reading anything into scratch vs ImageNet; (3) Bolivia is not systematically worse for the 5 % runs than for the 100 % ones, which again points at noise + the cloud confound rather than a clean OOD effect.
 - Next: `prithvi_frozen` f=1.0 (running), then `prithvi_lora`; queue U-Net seeds 1-2 and fractions 0.02 / 0.01 overnight.
+
+## 2026-09-10, Prithvi frozen (week 4 item)
+- Did: `prithvi_frozen` f=1.0 seed 0 on the 3070 Ti: 2.7 GB at batch 8 x 224, ~12 s/epoch, 8.7 GPU-min. Then launched the detached queue `scripts/queue_2026-09-10.cmd` (LoRA -> full -> Prithvi label sweep -> U-Net seeds 1-2).
+- Result: **test water IoU 0.699** (mIoU 0.825, F1 0.823), **Bolivia 0.527** (precision 0.98, recall 0.53). Best epoch 25 of 50; val IoU noisy (0.60-0.72).
+- Broke / surprised me: a frozen MAE encoder with a 1.4 M-param conv head is far below the U-Net (0.823 / 0.750). High precision + low recall on Bolivia = the head is conservative on unfamiliar-looking water. This is consistent with the MAE literature (features need fine-tuning; linear probes are weak), and it makes the LoRA vs full comparison the interesting one. Possible head-side improvements if LoRA also underperforms: use all 24 layers or a UNet-style decoder, larger crop (Prithvi was pretrained at 224 but the head sees a 14x14 grid), longer schedule.
+- Next: LoRA and full results from the queue.
+
+## 2026-09-10, Prithvi LoRA
+- Result (`prithvi_lora` f=1.0 s0, r=8 on qkv, 2.23 M trainable, 4.3 GB, 13.3 GPU-min): **test water IoU 0.778, Bolivia 0.725**. +8 / +20 points over frozen; still 4.5 / 2.5 points below U-Net scratch at full labels.
+- Reading: adapting the encoder matters much more than the head; the ranking at 100 % labels so far is U-Net (0.823) > LoRA (0.778) > frozen (0.699). Whether Prithvi overtakes at 5 % labels is the open question the queue answers next.
+
+## 2026-09-10, Prithvi full fine-tune
+- Result (`prithvi_full` f=1.0 s0, 305 M trainable, batch 4, 7.2 GB, 1,575 steps, 9.0 GPU-min): **test water IoU 0.779, Bolivia 0.637**.
+- Reading: identical to LoRA in-distribution (0.778 vs 0.779) and 9 points worse on Bolivia. Claim 3 (LoRA recovers full-FT accuracy with <1 % of the parameters) holds at 100 % labels; full FT seems to overfit the training regions. Caveat: full FT ran at batch 4 with backbone lr x0.05, LoRA at batch 8 with x0.5; a small lr sweep for full FT would make the comparison airtight.
+- Full-label ranking (seed 0): U-Net scratch 0.823 > U-Net ImageNet 0.812 > Prithvi LoRA 0.778 = Prithvi full 0.779 > Prithvi frozen 0.699. On Bolivia: ImageNet 0.789 > scratch 0.750 > LoRA 0.725 > full 0.637 > frozen 0.527.
