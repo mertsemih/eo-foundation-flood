@@ -73,3 +73,8 @@ def test_cache_matches_disk(fake_root):
     x, _ = b.load_raw(1)
     x[:] = 0
     assert not torch.equal(torch.zeros_like(xb), b[1][0])
+
+
+def test_tiny_fraction_keeps_at_least_one_chip(fake_root):
+    ds = Sen1Floods11(fake_root, "train", train_fraction=0.01)
+    assert len(ds) == 1

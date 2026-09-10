@@ -41,9 +41,12 @@ def make_loaders(cfg: dict):
     # workers avoid the per-epoch respawn cost when workers are used.
     nw = t.get("num_workers", 0)
     kw = dict(num_workers=nw, pin_memory=True, persistent_workers=nw > 0)
-    loaders = {
-        "train": DataLoader(ds["train"], batch_size=t["batch_size"], shuffle=True, drop_last=True, **kw)
-    }
+    # Tiny label fractions (1-2 % = 3-5 chips) can be smaller than the batch; shrink the batch
+    # instead of silently producing zero steps per epoch with drop_last.
+    bs = min(int(t["batch_size"]), len(ds["train"]))
+    if bs != t["batch_size"]:
+        print(f"batch_size {t['batch_size']} > {len(ds['train'])} training chips; using batch_size={bs}")
+    loaders = {"train": DataLoader(ds["train"], batch_size=bs, shuffle=True, drop_last=True, **kw)}
     for split in ("valid", "test", "bolivia"):
         loaders[split] = DataLoader(ds[split], batch_size=t.get("eval_batch_size", 4), shuffle=False, **kw)
     return ds, loaders
