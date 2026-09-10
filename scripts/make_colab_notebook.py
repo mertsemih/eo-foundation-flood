@@ -50,27 +50,30 @@ print("drive ok:", DRIVE_DIR)""",
     ),
     (
         "code",
-        """%cd /content
-import os, subprocess
-if not os.path.exists("eo-foundation-flood"):
-    !git clone -q --branch $BRANCH $REPO
-%cd /content/eo-foundation-flood
-!git pull -q
+        """import os, subprocess
+WORK = "/content/eo-foundation-flood"
+if not os.path.exists(os.path.join(WORK, "pyproject.toml")):
+    subprocess.run(["git", "clone", "--branch", BRANCH, REPO, WORK], check=True)
+os.chdir(WORK)
+subprocess.run(["git", "pull", "-q"], check=False)
+assert os.path.exists("configs/unet_scratch.yaml"), "clone failed: " + os.getcwd()
 !pip install -q -e ".[dev]" 2>&1 | tail -1
 if INSTALL_FOUNDATION:
     !pip install -q terratorch peft 2>&1 | tail -1
-import torch; print("torch", torch.__version__, "cuda", torch.cuda.is_available())""",
+import torch; print("torch", torch.__version__, "cuda", torch.cuda.is_available(), "cwd", os.getcwd())""",
     ),
     (
         "code",
-        """# Data: keep a copy in Drive so later sessions skip the download (1.75 GB, ~2 min first time).
+        """import os; os.chdir("/content/eo-foundation-flood")
+# Data: keep a copy in Drive so later sessions skip the download (1.75 GB, ~2 min first time).
 !python scripts/download_sen1floods11.py --root "$DRIVE_DIR/data/sen1floods11" --workers 16
 !rm -rf data && mkdir -p data && ln -s "$DRIVE_DIR/data/sen1floods11" data/sen1floods11
 !ls data/sen1floods11/v1.1/splits/flood_handlabeled/""",
     ),
     (
         "code",
-        """# Band statistics: reuse the committed ones (configs already contain them); recompute only if missing.
+        """import os; os.chdir("/content/eo-foundation-flood")
+# Band statistics: reuse the committed ones (configs already contain them); recompute only if missing.
 import yaml
 cfg = yaml.safe_load(open("configs/unet_scratch.yaml"))
 if not cfg["data"].get("mean"):
@@ -80,13 +83,15 @@ else:
     ),
     (
         "code",
-        """# runs/ lives in Drive so results survive disconnects and finished runs are skipped on re-run.
+        """import os; os.chdir("/content/eo-foundation-flood")
+# runs/ lives in Drive so results survive disconnects and finished runs are skipped on re-run.
 !rm -rf runs && ln -s "$DRIVE_DIR/runs" runs
 !python scripts/run_matrix.py --models $MODELS --fractions $FRACTIONS --seeds $SEEDS $EXTRA""",
     ),
     (
         "code",
-        """# Summary + a small zip (no checkpoints) to bring back to the local repo:  unzip into <repo>/runs/
+        """import os; os.chdir("/content/eo-foundation-flood")
+# Summary + a small zip (no checkpoints) to bring back to the local repo:  unzip into <repo>/runs/
 !python scripts/collect_results.py --runs runs --out "$DRIVE_DIR/results/results.csv"
 !cd runs && zip -q -r "$DRIVE_DIR/results/runs_small.zip" */config.yaml */metrics.csv */test_metrics.json
 print("zip:", f"{DRIVE_DIR}/results/runs_small.zip")""",
