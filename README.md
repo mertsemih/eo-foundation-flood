@@ -20,12 +20,12 @@ The experiment matrix is fixed up front (see [docs/PLAN.md](docs/PLAN.md)) so re
 
 - [x] Repository skeleton, config-driven training loop, metrics, tests
 - [x] Dataset downloaded and band statistics computed (`scripts/compute_stats.py`)
-- [ ] U-Net baselines (week 3)
+- [~] U-Net baselines: `unet_scratch` test water IoU 0.823 / Bolivia 0.750 (seed 0); label-fraction sweep running
 - [ ] Prithvi frozen / LoRA / full (weeks 4–6)
 - [ ] Low-label sweep + Bolivia OOD (weeks 7–9)
 - [ ] Write-up / preprint (weeks 10–12)
 
-The Prithvi wrapper (`src/eoflood/models/prithvi.py`) is written against the `terratorch` API but has **not yet been run end to end**; expect to adjust it the first time the weights are loaded. Everything else is covered by unit tests on synthetic data.
+The Prithvi wrapper (`src/eoflood/models/prithvi.py`) was verified against terratorch 1.2.13 on 10 Sep (weights load, 224 and 512 inputs, frozen / LoRA / full modes: 1.4 M / 2.2 M / 305 M trainable parameters). Training runs on a local RTX 3070 Ti (8 GB); the U-Net baseline takes ~4 GPU-minutes with the in-RAM chip cache.
 
 ## Setup
 

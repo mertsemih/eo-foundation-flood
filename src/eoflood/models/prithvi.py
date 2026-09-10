@@ -3,8 +3,13 @@
 Backbone weights come through ``terratorch`` (IBM's fine-tuning toolkit for Prithvi), LoRA
 adapters through ``peft``. Both are optional dependencies (``pip install -e ".[foundation]"``).
 
-STATUS: written against terratorch >= 1.0 / peft >= 0.10 but not yet executed end to end.
-Things most likely to need adjusting on first run are marked with ``# CHECK``.
+Verified on 2026-09-10 with terratorch 1.2.13 / peft 0.20.0 (``scripts/probe_prithvi.py``):
+``prithvi_eo_v2_300`` is ``terratorch.models.backbones.prithvi_mae.PrithviViT`` (303.9 M params,
+embed_dim 1024, 24 blocks, patch 16). It accepts 4-D ``(B, C, H, W)`` input directly and returns
+a list of 24 token tensors ``(B, N + 1, C)`` with a leading CLS token; 224 -> 197 tokens,
+512 -> 1025 tokens, so full 512 x 512 chips work at evaluation time. Linear layers per block are
+``qkv``, ``proj``, ``fc1``, ``fc2``. Trainable params: frozen 1.44 M (head only), LoRA r=8 on qkv
+2.23 M, full 305.3 M.
 """
 
 from __future__ import annotations
@@ -82,7 +87,6 @@ class PrithviSegmenter(nn.Module):
 
         from terratorch.registry import BACKBONE_REGISTRY  # lazy: optional dependency
 
-        # CHECK: kwarg names (bands / img_size / num_frames) against the installed terratorch.
         self.backbone = BACKBONE_REGISTRY.build(
             backbone_name,
             pretrained=pretrained,
@@ -94,7 +98,7 @@ class PrithviSegmenter(nn.Module):
         if isinstance(self.patch_size, (tuple, list)):
             self.patch_size = self.patch_size[-1]
         embed_dim = getattr(self.backbone, "embed_dim", None)
-        if embed_dim is None:  # CHECK: attribute name on the terratorch backbone
+        if embed_dim is None:
             raise AttributeError("could not read embed_dim from backbone; set it manually")
 
         self.finetune = finetune
@@ -114,13 +118,13 @@ class PrithviSegmenter(nn.Module):
             from peft import LoraConfig, inject_adapter_in_model
 
             cfg = LoraConfig(r=r, lora_alpha=alpha, lora_dropout=dropout, target_modules=targets)
-            # CHECK: module names inside the terratorch ViT ("qkv", "proj", "fc1", "fc2" for timm-style blocks)
+            # timm-style block names: "qkv", "proj" (attention), "fc1", "fc2" (MLP)
             self.backbone = inject_adapter_in_model(cfg, self.backbone)
 
     # ------------------------------------------------------------------ forward
     def _encode(self, x: torch.Tensor) -> list[torch.Tensor]:
-        # Prithvi is spatio-temporal: (B, C, T, H, W). terratorch backbones accept 4-D input
-        # and add the time axis themselves in recent versions.  CHECK on first run.
+        # Prithvi is spatio-temporal (B, C, T, H, W); terratorch's PrithviViT accepts 4-D input
+        # and inserts the T=1 axis itself (verified with terratorch 1.2.13).
         feats = self.backbone(x)
         if isinstance(feats, torch.Tensor):
             feats = [feats]
