@@ -38,3 +38,17 @@ Template:
 - Result: backbone is `PrithviViT` (303.9 M, embed 1024, 24 blocks). 4-D input works; each block returns (B, N+1, 1024) tokens with a CLS token; 224 -> 197, 512 -> 1025, so full-chip evaluation is possible without sliding windows. `PrithviSegmenter` builds and runs in all three modes on CPU: trainable 1.44 M (frozen) / 2.23 M (LoRA r=8, qkv) / 305.3 M (full). All `# CHECK` items resolved without code changes.
 - Broke / surprised me: HF hub warns about symlinks on Windows (cache stores duplicates); harmless. `terratorch` has no `__version__`, use `importlib.metadata`.
 - Next: once the U-Net sweep frees the GPU, run `prithvi_frozen` at 100 % labels and watch memory at batch 8 x 224 with AMP; then `prithvi_lora`.
+
+## 2026-09-10, U-Net sweep (week 3 item, done early)
+- Did: both U-Nets x {1.0, 0.25, 0.10, 0.05} labels, seed 0, fixed 1,550-step budget. 8 runs, ~4 min each. `collect_results.py` -> `results/results.csv`, `plot_results.py` -> `docs/figures/fig1..3`.
+- Result (test water IoU / Bolivia water IoU):
+
+  | labels | U-Net scratch | U-Net ImageNet |
+  |---|---|---|
+  | 100 % (252 chips) | 0.823 / 0.750 | 0.812 / 0.789 |
+  | 25 % (63) | 0.777 / 0.758 | 0.803 / 0.722 |
+  | 10 % (25) | 0.803 / 0.770 | 0.822 / 0.787 |
+  | 5 % (13) | 0.776 / 0.790 | 0.804 / 0.784 |
+
+- Broke / surprised me: **the low-label regime is not hard for a U-Net on this dataset.** With the same number of updates, 13 chips give test IoU 0.78-0.80 vs 0.81-0.82 with 252 chips. Water is spectrally distinctive in B8A/B11/B12, so a few chips already cover the concept. Consequences: (1) claim 2 ("gap widens below 10 %") may not hold at 5 %; we should extend the sweep to 2 % (5 chips) and 1 % (2-3 chips) where the U-Net presumably breaks; (2) one-seed differences of 0.02-0.04 are within what looks like run-to-run noise (val IoU wobbles ±0.1 between epochs), so seeds 1-2 are needed before reading anything into scratch vs ImageNet; (3) Bolivia is not systematically worse for the 5 % runs than for the 100 % ones, which again points at noise + the cloud confound rather than a clean OOD effect.
+- Next: `prithvi_frozen` f=1.0 (running), then `prithvi_lora`; queue U-Net seeds 1-2 and fractions 0.02 / 0.01 overnight.

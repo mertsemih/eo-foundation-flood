@@ -45,9 +45,10 @@ Report on every run: val water IoU (selection), test water IoU / mIoU / F1, Boli
 - [x] Loader fixes on real data (RAM cache, Windows DataLoader workers). Committed. *(done 10 Sep)*
 
 ### Week 3 (22–28 Sep) — second baseline + label sweep infra
-- [ ] Run `unet_imagenet`. Compare to scratch at 100 % labels.
-- [~] Sweep `data.train_fraction` ∈ {0.25, 0.10, 0.05} for both U-Nets, seed 0 (`scripts/run_matrix.py`, running 10 Sep). `scripts/collect_results.py` written.
-- [ ] First plot: water IoU vs label fraction (two lines). This is figure 1 of the paper, even if it changes later.
+- [x] Run `unet_imagenet`: test 0.812 vs scratch 0.823, Bolivia 0.789 vs 0.750 (seed 0, needs seeds). *(done 10 Sep)*
+- [x] Sweep `data.train_fraction` ∈ {0.25, 0.10, 0.05} for both U-Nets, seed 0. `scripts/collect_results.py` + `scripts/plot_results.py`. *(done 10 Sep; U-Net barely degrades at 5 %, see LAB_NOTEBOOK)*
+- [ ] Extend the label axis downward: fractions 0.02 (5 chips) and 0.01 (3 chips), all models. Update the matrix table above once confirmed.
+- [x] First plot: `docs/figures/fig1_iou_vs_labels.png`. *(done 10 Sep)*
 
 ### Week 4 (29 Sep–5 Oct) — Prithvi comes alive
 - [ ] `pip install -e ".[foundation]"`. Load `prithvi_eo_v2_300` via terratorch in a notebook, run one forward pass on a batch, inspect the token shapes. Fix the `# CHECK` items in `models/prithvi.py`.
