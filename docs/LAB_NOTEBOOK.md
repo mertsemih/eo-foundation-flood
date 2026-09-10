@@ -94,3 +94,15 @@ Template:
 - Why: the seed-0 1 % subset is Mekong_16233 (24 % water, 62 k px), Somalia_886726 (32 %, 83 k px) and Spain_7786924. Its 149 k water pixels are 80 % of what the 13-chip 5 % subset holds (185 k) because that subset drew several zero-water chips. **At <= 5 % labels the subset draw, not the label count, is the dominant variable.**
 - Consequence for the protocol: (1) report tiny-fraction results over >= 3 subset seeds (mean +/- std), (2) consider a *water-pixel budget* axis (e.g. 10 k / 50 k / 150 k labeled water pixels) as the honest x-axis instead of chip count, or stratify the draw by water fraction; (3) the paper's claim 2 should be reframed around water-pixel budget.
 - Next: remaining 6 tiny runs; then seeds 1-2 for 0.02 / 0.01 (U-Net scratch + LoRA first).
+
+## 2026-09-10, end of day: 25 local runs (seed 0), GPU released
+- Tiny-fraction results (test / Bolivia water IoU):
+
+  | labels | U-Net scratch | U-Net ImageNet | Prithvi frozen | Prithvi LoRA |
+  |---|---|---|---|---|
+  | 2 % (5 chips) | 0.788 / 0.788 | 0.792 / 0.789 | 0.684 / 0.742 | 0.706 / 0.706 |
+  | 1 % (3 chips) | 0.812 / 0.775 | 0.810 / 0.767 | 0.676 / 0.670 | 0.722 / 0.715 |
+
+- Reading: with the same 3 chips, U-Net 0.81 vs LoRA 0.72 vs frozen 0.68. The ordering U-Net > LoRA > frozen is identical at every fraction from 100 % down to 1 %; LoRA's curve keeps sliding (0.778 -> 0.706) while the U-Net stays flat within noise. The seed-0 1 % subset is water-rich (see above), so the absolute numbers at 1-2 % need subset seeds, but the *ordering* between models on the same subset is a fair comparison.
+- Local queue stopped after this run at the user's request (laptop needed for other work). Colab is running U-Net seeds 1-2 in parallel; results to be merged from Drive.
+- Remaining for the paper: Prithvi seeds 1-2 (Colab), tiny-fraction subset seeds, Prithvi decoder ablation, LoRA rank ablation, then write.
