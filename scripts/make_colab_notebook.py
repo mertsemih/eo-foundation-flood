@@ -50,10 +50,14 @@ print("drive ok:", DRIVE_DIR)""",
     ),
     (
         "code",
-        """import os, subprocess
+        """import os, shutil, subprocess
 WORK = "/content/eo-foundation-flood"
 if not os.path.exists(os.path.join(WORK, "pyproject.toml")):
-    subprocess.run(["git", "clone", "--branch", BRANCH, REPO, WORK], check=True)
+    shutil.rmtree(WORK, ignore_errors=True)   # leftovers from a failed clone
+    r = subprocess.run(["git", "clone", "--branch", BRANCH, REPO, WORK], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise SystemExit("git clone failed (is the repo public?):
+" + r.stderr)
 os.chdir(WORK)
 subprocess.run(["git", "pull", "-q"], check=False)
 assert os.path.exists("configs/unet_scratch.yaml"), "clone failed: " + os.getcwd()
