@@ -87,3 +87,10 @@ Template:
 - Honest framing for the paper: "a small, well-tuned CNN remains the better choice for Sentinel-2 flood mapping on Sen1Floods11, even with 13 labeled chips; the foundation model's advantage, if any, must lie below 5 % labels or in cross-sensor / cross-region transfer that this benchmark does not test." That is a publishable negative result if the seeds and a 1-2 % sweep confirm it, and it is more useful to practitioners than a marginal win.
 - Caveats to close before writing: (a) Prithvi head is a plain FCN on a 14x14 grid; a UNet-style decoder over multiple scales might recover part of the gap (ablation); (b) LoRA rank / targets untested; (c) Prithvi crop 224 vs U-Net crop 224 is matched, but Prithvi's positional grid was pretrained at 224 so this is its comfort zone, not a handicap; (d) dataset-vs-Prithvi normalization stats.
 - Next: seeds from Colab; add fractions 0.02 / 0.01 (needs the batch-size guard); decoder ablation for Prithvi.
+
+## 2026-09-10, 2 % / 1 % labels (seed 0, running)
+- Did: added the batch-size guard, launched fractions 0.02 (5 chips) and 0.01 (3 chips) for U-Nets, Prithvi frozen and LoRA (seed 0). Same 1,550-step budget, eval every 31 epochs.
+- Result so far (U-Net scratch): **2 % -> test 0.788 / Bolivia 0.788; 1 % -> test 0.812 / Bolivia 0.775.** Three chips reach the full-label number minus one point.
+- Why: the seed-0 1 % subset is Mekong_16233 (24 % water, 62 k px), Somalia_886726 (32 %, 83 k px) and Spain_7786924. Its 149 k water pixels are 80 % of what the 13-chip 5 % subset holds (185 k) because that subset drew several zero-water chips. **At <= 5 % labels the subset draw, not the label count, is the dominant variable.**
+- Consequence for the protocol: (1) report tiny-fraction results over >= 3 subset seeds (mean +/- std), (2) consider a *water-pixel budget* axis (e.g. 10 k / 50 k / 150 k labeled water pixels) as the honest x-axis instead of chip count, or stratify the draw by water fraction; (3) the paper's claim 2 should be reframed around water-pixel budget.
+- Next: remaining 6 tiny runs; then seeds 1-2 for 0.02 / 0.01 (U-Net scratch + LoRA first).
