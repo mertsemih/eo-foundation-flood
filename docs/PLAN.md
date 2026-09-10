@@ -55,6 +55,16 @@ Report on every run: val water IoU (selection), test water IoU / mIoU / F1, Boli
 - [ ] Get `prithvi_frozen` training end to end. It will be the fastest Prithvi variant; use it to debug.
 - [ ] NASA Space Apps Challenge is usually the first weekend of October: register with the Ankara local event, use this repo as your project demo if a flood/water challenge is offered.
 
+### Status after 10 Sep (two working days)
+Weeks 1–4 and most of weeks 5–8 are done: 41 runs, seed 0 for every model from 100 % down to 1 % labels, 3 seeds for the U-Nets. Headline: U-Nets ≥ 0.79 test water IoU at every fraction, Prithvi LoRA 0.71–0.78, frozen ≈ 0.69, full FT = LoRA in-distribution but −9 pts on Bolivia. The paper is a controlled negative result for the foundation model on Sen1Floods11 plus a positive one for LoRA over full fine-tuning.
+
+**Next session (Colab, in this order):**
+1. Prithvi frozen + LoRA, seeds 1–2, fractions 1.0 / 0.25 / 0.10 / 0.05 (16 runs, ~12 min each on T4 → ~3.5 h). Set `INSTALL_FOUNDATION=True` in the Colab notebook / pip cell.
+2. Subset seeds for 2 % and 1 %: seeds 1–2 for `unet_scratch`, `unet_imagenet`, `prithvi_lora` (12 runs).
+3. Prithvi decoder ablation: implement a multi-scale (UNet-style) decoder over 4 encoder depths and rerun `prithvi_lora` at 100 % and 5 % (needs code, then 2 runs).
+4. LoRA ablation: rank 4 / 16 and targets `qkv+proj+fc1+fc2` at 100 % (3 runs).
+5. Then: freeze figures, fill Table 1 and the results section of `paper/main.tex`.
+
 ### Weeks 5–6 — LoRA and full fine-tune
 - [ ] `prithvi_lora`: confirm trainable-parameter count is a few million, not 300M. Tune `backbone_lr_mult`, `lora_r` ∈ {4, 8, 16}.
 - [ ] `prithvi_full` with the largest batch that fits; gradient checkpointing if needed.
