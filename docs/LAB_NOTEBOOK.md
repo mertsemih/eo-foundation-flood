@@ -67,3 +67,23 @@ Template:
 - Result (`prithvi_full` f=1.0 s0, 305 M trainable, batch 4, 7.2 GB, 1,575 steps, 9.0 GPU-min): **test water IoU 0.779, Bolivia 0.637**.
 - Reading: identical to LoRA in-distribution (0.778 vs 0.779) and 9 points worse on Bolivia. Claim 3 (LoRA recovers full-FT accuracy with <1 % of the parameters) holds at 100 % labels; full FT seems to overfit the training regions. Caveat: full FT ran at batch 4 with backbone lr x0.05, LoRA at batch 8 with x0.5; a small lr sweep for full FT would make the comparison airtight.
 - Full-label ranking (seed 0): U-Net scratch 0.823 > U-Net ImageNet 0.812 > Prithvi LoRA 0.778 = Prithvi full 0.779 > Prithvi frozen 0.699. On Bolivia: ImageNet 0.789 > scratch 0.750 > LoRA 0.725 > full 0.637 > frozen 0.527.
+
+## 2026-09-10, Prithvi label sweep complete (17 local runs, seed 0)
+- Result, test water IoU / Bolivia water IoU:
+
+  | labels | U-Net scratch | U-Net ImageNet | Prithvi frozen | Prithvi LoRA | Prithvi full |
+  |---|---|---|---|---|---|
+  | 100 % | 0.823 / 0.750 | 0.812 / 0.789 | 0.699 / 0.527 | 0.778 / 0.725 | 0.779 / 0.637 |
+  | 25 % | 0.777 / 0.758 | 0.803 / 0.722 | 0.699 / 0.755 | 0.751 / 0.744 | - |
+  | 10 % | 0.803 / 0.770 | 0.822 / 0.787 | 0.686 / 0.674 | 0.734 / 0.751 | - |
+  | 5 % | 0.776 / 0.790 | 0.804 / 0.784 | 0.695 / 0.625 | 0.719 / 0.741 | - |
+
+- Reading (single seed, so ±0.02-0.03 is noise):
+  1. **Claim 1 holds strongly, in the negative direction:** at full labels the foundation model does not merely fail to beat the U-Net, it trails it by 4-5 points in every regime.
+  2. **Claim 2 does not hold down to 5 %:** the U-Net degrades by ~2-5 points from 100 % to 5 %, LoRA by ~6 points. The gap does not close, it widens slightly against Prithvi. On this dataset 13 chips still contain enough water pixels (~1 M) for a CNN.
+  3. **Claim 3 holds:** LoRA (2.2 M) equals full FT (305 M) in-distribution and beats it by 9 points on Bolivia.
+  4. **Claim 4 is unresolved:** Bolivia numbers fluctuate ±0.05 across label fractions for every model, larger than any between-model difference except frozen/full. Seeds 1-2 (running on Colab) are needed; the cloud confound (27 % no-data) probably dominates.
+- Cost: U-Net 3.7-4.5 GPU-min, frozen 9-10, LoRA 13-14, full 9 (batch 4) on the 3070 Ti.
+- Honest framing for the paper: "a small, well-tuned CNN remains the better choice for Sentinel-2 flood mapping on Sen1Floods11, even with 13 labeled chips; the foundation model's advantage, if any, must lie below 5 % labels or in cross-sensor / cross-region transfer that this benchmark does not test." That is a publishable negative result if the seeds and a 1-2 % sweep confirm it, and it is more useful to practitioners than a marginal win.
+- Caveats to close before writing: (a) Prithvi head is a plain FCN on a 14x14 grid; a UNet-style decoder over multiple scales might recover part of the gap (ablation); (b) LoRA rank / targets untested; (c) Prithvi crop 224 vs U-Net crop 224 is matched, but Prithvi's positional grid was pretrained at 224 so this is its comfort zone, not a handicap; (d) dataset-vs-Prithvi normalization stats.
+- Next: seeds from Colab; add fractions 0.02 / 0.01 (needs the batch-size guard); decoder ablation for Prithvi.
