@@ -61,3 +61,15 @@ def test_build_datasets(fake_root):
     ds = build_datasets(cfg)
     assert set(ds) == {"train", "valid", "test", "bolivia"}
     assert ds["train"].in_channels == len(PRITHVI_BANDS)
+
+
+def test_cache_matches_disk(fake_root):
+    a = Sen1Floods11(fake_root, "train")
+    b = Sen1Floods11(fake_root, "train", cache=True)
+    xa, ya = a[1]
+    xb, yb = b[1]
+    assert torch.equal(xa, xb) and torch.equal(ya, yb)
+    # the cache must hand out copies so callers cannot corrupt it
+    x, _ = b.load_raw(1)
+    x[:] = 0
+    assert not torch.equal(torch.zeros_like(xb), b[1][0])

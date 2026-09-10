@@ -23,7 +23,7 @@ Official splits (`v1.1/splits/flood_handlabeled/`):
 | test | 90 | in-distribution test |
 | bolivia | 15 | **held-out region**, our OOD test |
 
-Counts are from the dataset paper; verify after download with `ls LabelHand | wc -l` and the CSV lengths.
+Counts verified after download on 2026-09-10 (446 chips per folder, CSV rows 252 / 89 / 90 / 15). Ten regions appear in train / valid / test with the same proportions; Bolivia only in its own split.
 
 ## Band mapping for Prithvi-EO
 
@@ -48,4 +48,6 @@ Per-band mean / std over the training split, computed once with `scripts/compute
 
 - Some S2 chips contain NaN / nodata pixels; the loader maps them to 0 after normalization is *not* applied, i.e. before standardization. Watch for chips where this dominates.
 - Label `-1` also marks clouds. It is excluded from loss and metrics (`ignore_index`).
-- Class imbalance: water is roughly 10–15 % of valid pixels overall but varies wildly per chip. `train.class_weights` exists for a weighted-CE ablation; the primary metric (water IoU) is imbalance-aware anyway.
+- Class imbalance (measured): mean water fraction of valid pixels is 9 % (train), 11 % (valid), 14 % (test), 17 % (Bolivia); the median chip has only ~2.5 % water and several chips have none. `train.class_weights` exists for a weighted-CE ablation; the primary metric (water IoU) is imbalance-aware anyway.
+- No-data / cloud share (measured): mean 13 % in train / valid / test, but **27 % in Bolivia** (median 27 %, max 66 %). One train chip has no valid pixel at all. The Bolivia split is therefore a cloud-cover shift as much as a geographic one; say so in the paper.
+- The download script fetches the public bucket over HTTPS via the JSON API, so no Google account or gcloud is needed (1.75 GB total).
