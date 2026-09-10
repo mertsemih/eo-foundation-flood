@@ -46,8 +46,8 @@ def fig_label_fraction(df: pd.DataFrame, out: Path) -> None:
             yerr = [s["mean"] - s["min"], s["max"] - s["mean"]]
             ax.errorbar(s.train_fraction * 100, s["mean"], yerr=yerr, marker="o", capsize=3, label=LABELS.get(m, m))
         ax.set_xscale("log")
-        ax.set_xticks([5, 10, 25, 100])
-        ax.set_xticklabels(["5", "10", "25", "100"])
+        ax.set_xticks([1, 2, 5, 10, 25, 100])
+        ax.set_xticklabels(["1", "2", "5", "10", "25", "100"])
         ax.set_xlabel("training labels (% of 252 chips)")
         ax.set_title(title)
         ax.grid(alpha=0.3)
