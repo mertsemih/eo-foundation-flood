@@ -30,3 +30,7 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# logs
+*.log
+results/
