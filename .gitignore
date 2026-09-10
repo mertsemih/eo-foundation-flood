@@ -34,3 +34,12 @@ Thumbs.db
 # logs
 *.log
 results/
+
+# latex
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.synctex.gz
+paper/main.pdf

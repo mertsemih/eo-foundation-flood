@@ -20,7 +20,7 @@ The experiment matrix is fixed up front (see [docs/PLAN.md](docs/PLAN.md)) so re
 
 - [x] Repository skeleton, config-driven training loop, metrics, tests
 - [x] Dataset downloaded and band statistics computed (`scripts/compute_stats.py`)
-- [~] U-Net baselines: `unet_scratch` test water IoU 0.823 / Bolivia 0.750 (seed 0); label-fraction sweep running
+- [x] U-Net baselines + label sweep (seed 0): scratch 0.823 / ImageNet 0.812 test water IoU at 100 % labels; still 0.78–0.80 at 5 % (`docs/figures/fig1_iou_vs_labels.png`)
 - [ ] Prithvi frozen / LoRA / full (weeks 4–6)
 - [ ] Low-label sweep + Bolivia OOD (weeks 7–9)
 - [ ] Write-up / preprint (weeks 10–12)

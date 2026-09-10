@@ -1,0 +1,120 @@
+% IEEE conference template (SIU / RAST / IGARSS all accept IEEEtran).
+% Build: pdflatex main && bibtex main && pdflatex main && pdflatex main
+\documentclass[conference]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\begin{document}
+
+\title{How Much Do Earth-Observation Foundation Models Help Flood Mapping When Labels Are Scarce?\\
+\large Frozen, LoRA and Full Fine-Tuning of Prithvi-EO~2.0 on Sen1Floods11}
+
+\author{\IEEEauthorblockN{Mert Semih Sar{\i}yerli}
+\IEEEauthorblockA{Department of Computer Engineering, Faculty of Technology\\
+Gazi University, Ankara, T\"urkiye\\
+semihmertsariyerli.06@gmail.com}}
+
+\maketitle
+
+\begin{abstract}
+\todo{Write last. 150--200 words: problem (flood extent from Sentinel-2 with few labels), what we compare (two U-Nets vs.\ three fine-tuning regimes of a 300M-parameter EO foundation model), the label-fraction sweep, the held-out Bolivia region, the headline numbers, and the practical recommendation.}
+\end{abstract}
+
+\begin{IEEEkeywords}
+flood mapping, Sentinel-2, foundation models, parameter-efficient fine-tuning, LoRA, Sen1Floods11, domain shift
+\end{IEEEkeywords}
+
+\section{Introduction}
+Rapid flood-extent mapping from optical satellite imagery is limited less by model capacity than by the cost of pixel-level labels: Sen1Floods11~\cite{bonafilia2020sen1floods11}, the standard benchmark, contains only 446 hand-labeled chips. Earth-observation (EO) foundation models such as Prithvi-EO~2.0~\cite{szwarcman2024prithvi}, pretrained by masked autoencoding on large unlabeled archives, promise to reduce that dependence on labels. Two questions matter to a practitioner who has a handful of labeled scenes and a single GPU:
+\begin{enumerate}
+  \item How much accuracy does the foundation model buy over a well-tuned U-Net, and does the advantage grow as labels shrink?
+  \item Which fine-tuning regime---a frozen encoder with a trained head, low-rank adapters (LoRA)~\cite{hu2021lora}, or full fine-tuning---gives the best accuracy per trainable parameter, and which generalizes best to an unseen region?
+\end{enumerate}
+We answer both with a fixed experimental matrix: five models $\times$ four label fractions $\times$ three seeds, all trained with the same optimizer-step budget and evaluated on the in-distribution test split and on the held-out Bolivia region of Sen1Floods11.
+
+\textbf{Contributions.} (i) A controlled comparison of from-scratch and ImageNet-initialized U-Nets against frozen / LoRA / fully fine-tuned Prithvi-EO~2.0 on Sen1Floods11 under 5--100\,\% of the training labels. (ii) An analysis of geographic transfer to Bolivia that separates the region shift from the cloud-cover shift present in that split. (iii) An open, reproducible pipeline (\url{https://github.com/mertsemih/eo-foundation-flood}) with every run's configuration and metrics.
+
+\section{Related Work}
+\todo{3 short paragraphs: (a) flood mapping on Sen1Floods11 (original paper, later S1/S2 fusion and transformer results); (b) EO foundation models (Prithvi 1.0/2.0, SatMAE, Clay, DOFA) and how they were evaluated on floods; (c) parameter-efficient fine-tuning in vision (LoRA, adapters, linear probing vs.\ full FT results, e.g. the ``linear probe then fine-tune'' literature). Keep it to what the results section will refer back to.}
+
+\section{Data}
+\subsection{Sen1Floods11}
+We use the hand-labeled subset of Sen1Floods11: 446 chips of $512\times512$ pixels at 10\,m over eleven flood events, each with Sentinel-2 L1C (13 bands), Sentinel-1 GRD (VV, VH) and a per-pixel label in $\{-1, 0, 1\}$ for no-data/cloud, no water and water. We follow the official split: 252 training, 89 validation and 90 test chips drawn from ten regions, plus 15 chips from Bolivia that appear in no other split and serve as the out-of-distribution (OOD) test.
+
+Two properties of the data shape the evaluation. First, water is rare: the median chip has 2.5\,\% water among valid pixels (mean 9\,\% in training), so we report water IoU rather than pixel accuracy. Second, the Bolivia split is not only a new region but also a cloudier one: 27\,\% of its pixels are no-data on average against 13\,\% in the other splits (\todo{Fig.~X, chip examples}). Any OOD claim therefore mixes geographic and cloud-cover shift; we discuss this in Sec.~\ref{sec:discussion}.
+
+\subsection{Inputs and preprocessing}
+All models receive the same six Sentinel-2 bands (B2, B3, B4, B8A, B11, B12), which correspond to the six HLS bands Prithvi-EO was pretrained on. Restricting the U-Nets to the same bands isolates the effect of pretraining from that of input information. Reflectances are standardized per band with statistics of the training split. Training uses random $224\times224$ crops with flips and 90$^\circ$ rotations; evaluation uses whole $512\times512$ chips. Pixels labeled $-1$ are excluded from the loss and from all metrics.
+
+\subsection{Label-fraction protocol}
+For a fraction $f\in\{1.0, 0.25, 0.10, 0.05\}$ we keep $\lceil 252 f\rceil$ training chips, selected once per seed with a fixed permutation so that every model sees the same subset. Validation and test sets are never subsampled. Because a fixed number of epochs would give low-label runs proportionally fewer parameter updates, every run trains for the same budget of 1{,}550 optimizer steps (50 epochs at $f=1$) with the same cosine schedule.
+
+\section{Methods}
+\subsection{Baselines}
+\textbf{U-Net (scratch)} is a U-Net with a ResNet-34 encoder (24.4\,M parameters) trained from random initialization. \textbf{U-Net (ImageNet)} is the same architecture with an ImageNet-pretrained encoder, a control for ``generic'' versus ``EO-specific'' pretraining.
+
+\subsection{Prithvi-EO 2.0 with three fine-tuning regimes}
+Prithvi-EO~2.0~(300M) is a ViT-L masked autoencoder (24 blocks, embedding size 1024, patch size 16) pretrained on Harmonized Landsat--Sentinel imagery. We take the encoder, concatenate the token maps of its last four blocks and decode them with a light fully convolutional head (four upsampling stages, 1.4\,M parameters). Three regimes differ only in which encoder parameters receive gradients:
+\begin{itemize}
+  \item \textbf{Frozen}: encoder fixed, head only (1.4\,M trainable).
+  \item \textbf{LoRA}: rank-8 adapters on the query/key/value projections of every block (0.8\,M adapter parameters, 2.2\,M trainable in total).
+  \item \textbf{Full}: all 305\,M parameters, encoder at a $20\times$ lower learning rate than the head.
+\end{itemize}
+
+\subsection{Training and evaluation}
+AdamW, cosine learning-rate schedule with linear warm-up, mixed precision, cross-entropy loss. Model selection uses validation water IoU. We report water IoU, mean IoU and water F1 on the test and Bolivia splits, the number of trainable parameters and GPU time, as mean $\pm$ standard deviation over three seeds. All experiments ran on a single 8\,GB consumer GPU. \todo{state exact lr / batch / epochs per model from the configs}
+
+\section{Results}
+\subsection{Full-label regime}
+\todo{Table~\ref{tab:full}: five models at $f=1$. Test and Bolivia water IoU, mIoU, F1, trainable params, GPU-min. Current single-seed numbers: U-Net scratch test 0.823 / Bolivia 0.750.}
+
+\begin{table}[t]
+\centering
+\caption{All training labels ($f=1$). Mean $\pm$ std over 3 seeds.}
+\label{tab:full}
+\begin{tabular}{lrrrr}
+\toprule
+Model & Trainable & Test IoU$_w$ & Bolivia IoU$_w$ & GPU min \\
+\midrule
+U-Net (scratch) & 24.4\,M & \todo{} & \todo{} & \todo{} \\
+U-Net (ImageNet) & 24.4\,M & & & \\
+Prithvi frozen & 1.4\,M & & & \\
+Prithvi LoRA & 2.2\,M & & & \\
+Prithvi full & 305\,M & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Low-label regime}
+\todo{Fig.~1 (fig1\_iou\_vs\_labels.png): water IoU vs.\ label fraction, test and Bolivia panels. State where the curves cross, and the gap at 5\,\%.}
+
+\subsection{Accuracy per trainable parameter}
+\todo{Fig.~3 (fig3\_iou\_vs\_params.png). Does LoRA recover $\ge$90\,\% of full fine-tuning at $<$1\,\% of its parameters?}
+
+\subsection{Transfer to Bolivia}
+\todo{Fig.~2 (fig2\_ood\_gap.png): test vs.\ Bolivia per model. Report the drop in points for each model; check whether pretraining shrinks the gap.}
+
+\subsection{Ablation}
+\todo{One of: LoRA targets (qkv vs.\ qkv+proj+fc1+fc2); LoRA rank $\{4,8,16\}$; dataset vs.\ Prithvi normalization statistics.}
+
+\section{Discussion}
+\label{sec:discussion}
+\todo{Interpret the four claims from PLAN.md in the light of the numbers. Discuss the Bolivia cloud confound; the failure modes seen in Fig.~X (flooded vegetation under-segmented, cloud shadows confused with water); what a practitioner with 10 labeled scenes should do.}
+
+\section{Limitations}
+Single dataset and sensor (Sentinel-2 only; no SAR fusion); a single foundation model at one size; consumer-GPU budget that limits batch size for full fine-tuning; the Bolivia OOD split is small (15 chips) and cloudier than the rest.
+
+\section{Conclusion}
+\todo{Three sentences.}
+
+\section*{Reproducibility}
+Code, configurations and per-run metrics are available at \url{https://github.com/mertsemih/eo-foundation-flood}. Each run is fully specified by one YAML file; the dataset is downloaded with one script from the public Sen1Floods11 bucket.
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
