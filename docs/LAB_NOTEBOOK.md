@@ -106,3 +106,18 @@ Template:
 - Reading: with the same 3 chips, U-Net 0.81 vs LoRA 0.72 vs frozen 0.68. The ordering U-Net > LoRA > frozen is identical at every fraction from 100 % down to 1 %; LoRA's curve keeps sliding (0.778 -> 0.706) while the U-Net stays flat within noise. The seed-0 1 % subset is water-rich (see above), so the absolute numbers at 1-2 % need subset seeds, but the *ordering* between models on the same subset is a fair comparison.
 - Local queue stopped after this run at the user's request (laptop needed for other work). Colab is running U-Net seeds 1-2 in parallel; results to be merged from Drive.
 - Remaining for the paper: Prithvi seeds 1-2 (Colab), tiny-fraction subset seeds, Prithvi decoder ablation, LoRA rank ablation, then write.
+
+## 2026-09-10, Colab U-Net seeds merged (41 runs total)
+- Did: 16 U-Net runs (seeds 1-2, fractions 1.0/0.25/0.10/0.05) from Colab T4 (~5 GPU-min each) merged into `runs/`. Table below is test / Bolivia water IoU, mean ± std over seeds where n>1.
+
+| labels | unet_scratch | unet_imagenet | prithvi_frozen | prithvi_lora | prithvi_full |
+|---|---|---|---|---|---|
+| 100 % | 0.823 ± 0.008 / 0.766 ± 0.021 (n=3) | 0.829 ± 0.015 / 0.781 ± 0.007 (n=3) | 0.699 / 0.527 (n=1) | 0.778 / 0.725 (n=1) | 0.778 / 0.637 (n=1) |
+| 25 % | 0.802 ± 0.031 / 0.678 ± 0.112 (n=3) | 0.820 ± 0.016 / 0.744 ± 0.035 (n=3) | 0.699 / 0.755 (n=1) | 0.750 / 0.744 (n=1) | – |
+| 10 % | 0.803 ± 0.003 / 0.769 ± 0.006 (n=3) | 0.827 ± 0.005 / 0.773 ± 0.043 (n=3) | 0.686 / 0.674 (n=1) | 0.734 / 0.751 (n=1) | – |
+| 5 % | 0.807 ± 0.031 / 0.770 ± 0.032 (n=3) | 0.814 ± 0.010 / 0.778 ± 0.008 (n=3) | 0.695 / 0.625 (n=1) | 0.719 / 0.741 (n=1) | – |
+| 2 % | 0.788 / 0.788 (n=1) | 0.792 / 0.789 (n=1) | 0.683 / 0.742 (n=1) | 0.706 / 0.706 (n=1) | – |
+| 1 % | 0.812 / 0.775 (n=1) | 0.810 / 0.767 (n=1) | 0.676 / 0.670 (n=1) | 0.722 / 0.715 (n=1) | – |
+
+- Reading: with 3 seeds, in-distribution std is 0.003-0.03 for the U-Nets; **every U-Net point is >= 0.79 and every Prithvi point is <= 0.78**, so the ordering is outside seed noise. ImageNet init is consistently +1-2 points over scratch (0.827 vs 0.823 at 100 %, 0.827 vs 0.803 at 10 %). Bolivia std is 0.01-0.11 (scratch at 25 % has one outlier seed at 0.55), which confirms the OOD split is too small/cloudy to rank models finely; report it with error bars and do not over-interpret.
+- Next (tomorrow): Prithvi frozen + LoRA seeds 1-2 on Colab; tiny-fraction subset seeds; decoder and LoRA-rank ablations.

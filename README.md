@@ -22,7 +22,7 @@ The experiment matrix is fixed up front (see [docs/PLAN.md](docs/PLAN.md)) so re
 - [x] Dataset downloaded and band statistics computed (`scripts/compute_stats.py`)
 - [x] U-Net baselines + label sweep (seed 0): scratch 0.823 / ImageNet 0.812 test water IoU at 100 % labels; still 0.78–0.80 at 5 % (`docs/figures/fig1_iou_vs_labels.png`)
 - [x] Prithvi frozen / LoRA / full at 100 % labels (seed 0): 0.699 / 0.778 / 0.779 test water IoU; LoRA beats full FT on Bolivia (0.725 vs 0.637)
-- [~] Low-label sweep: seed 0 done for all models down to 5 % (U-Net still ahead at every fraction); seeds 1–2 and 2 % / 1 % fractions pending
+- [~] Label sweep 100 % → 1 % for all models (seed 0) and 3 seeds for the U-Nets: U-Nets ≥ 0.79 test water IoU at every fraction, Prithvi ≤ 0.78; Prithvi seeds and ablations pending
 - [ ] Write-up / preprint (weeks 10–12)
 
 The Prithvi wrapper (`src/eoflood/models/prithvi.py`) was verified against terratorch 1.2.13 on 10 Sep (weights load, 224 and 512 inputs, frozen / LoRA / full modes: 1.4 M / 2.2 M / 305 M trainable parameters). Training runs on a local RTX 3070 Ti (8 GB); the U-Net baseline takes ~4 GPU-minutes with the in-RAM chip cache.
