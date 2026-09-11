@@ -20,13 +20,16 @@ import pandas as pd
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-ORDER = ["unet_scratch", "unet_imagenet", "prithvi_frozen", "prithvi_lora", "prithvi_lora_unetdec", "prithvi_full"]
+ORDER = ["unet_scratch", "unet_imagenet", "prithvi_frozen", "prithvi_lora", "prithvi_lora_unetdec", "prithvi_lora_r4", "prithvi_lora_r16", "prithvi_lora_wide", "prithvi_full"]
 LABELS = {
     "unet_scratch": "U-Net (scratch)",
     "unet_imagenet": "U-Net (ImageNet)",
     "prithvi_frozen": "Prithvi frozen",
     "prithvi_lora": "Prithvi LoRA",
     "prithvi_lora_unetdec": "Prithvi LoRA + UNet dec.",
+    "prithvi_lora_r4": "Prithvi LoRA r=4",
+    "prithvi_lora_r16": "Prithvi LoRA r=16",
+    "prithvi_lora_wide": "Prithvi LoRA qkv+proj+fc",
     "prithvi_full": "Prithvi full FT",
 }
 
