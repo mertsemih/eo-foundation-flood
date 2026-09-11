@@ -126,3 +126,15 @@ Template:
 - Did: disk was at 30 GB free; `runs/` held 32 GB because every Prithvi run saved the full 1.2 GB state dict twice. Deleted all `last.pt` and the non-essential Prithvi `best.pt` (27 GB freed; kept the three f=1.0 seed-0 Prithvi checkpoints). Training now saves **only trainable tensors + buffers** (`trainable_state_dict`), and `load_checkpoint` rebuilds frozen weights from the config and verifies nothing trainable is missing; old full checkpoints still load (LoRA f=1.0 Bolivia 0.7248 reproduced).
 - Did: `MultiScaleUNetDecoder` (four encoder depths 6/12/18/24 -> x4/x2/x1/x0.5 pyramid -> UNet merge). Prithvi LoRA trainable params: FCN head 2.23 M, UNet decoder 4.65 M (head 3.86 M). Config `prithvi_lora_unetdec`. LoRA ablation configs: `prithvi_lora_r4`, `prithvi_lora_r16`, `prithvi_lora_wide` (qkv+proj+fc1+fc2).
 - Queues: Colab runs Prithvi frozen + LoRA seeds 1-2 (16 runs). Local: q6 = 2 % / 1 % subset seeds 1-2 for both U-Nets and LoRA (12 runs), then q7 = decoder ablation at 100 % and 5 %, then q8 = LoRA rank / target ablation at 100 %.
+
+## 2026-09-11, 2 % / 1 % with three subset seeds (q6 done, 53 runs total)
+- Result (test / Bolivia water IoU, mean ± std over subset seeds 0-2):
+
+  | labels | U-Net scratch | U-Net ImageNet | Prithvi LoRA |
+  |---|---|---|---|
+  | 2 % (5 chips) | 0.809 ± 0.022 / 0.765 ± 0.020 | 0.788 ± 0.021 / 0.774 ± 0.014 | 0.697 ± 0.013 / 0.729 ± 0.023 |
+  | 1 % (3 chips) | 0.803 ± 0.013 / 0.728 ± 0.063 | 0.809 ± 0.015 / 0.766 ± 0.024 | 0.704 ± 0.017 / 0.727 ± 0.027 |
+
+- Reading: the "3 chips -> 0.81" result was **not** a lucky draw. Across three different subsets the U-Nets stay at 0.79-0.81 and LoRA at 0.69-0.71; the ~10-point gap is 5x the subset std. Claim 2 is refuted down to 1 % of the labels. Bolivia std for scratch at 1 % is large (0.063) - the OOD split remains noisy.
+- Reading 2: the ImageNet-vs-scratch difference at tiny fractions is within noise (0.788 vs 0.809 at 2 %, 0.809 vs 0.803 at 1 %).
+- Next: decoder ablation (running), LoRA rank/targets (queued), Colab Prithvi seeds.
