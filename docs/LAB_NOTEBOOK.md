@@ -138,3 +138,10 @@ Template:
 - Reading: the "3 chips -> 0.81" result was **not** a lucky draw. Across three different subsets the U-Nets stay at 0.79-0.81 and LoRA at 0.69-0.71; the ~10-point gap is 5x the subset std. Claim 2 is refuted down to 1 % of the labels. Bolivia std for scratch at 1 % is large (0.063) - the OOD split remains noisy.
 - Reading 2: the ImageNet-vs-scratch difference at tiny fractions is within noise (0.788 vs 0.809 at 2 %, 0.809 vs 0.803 at 1 %).
 - Next: decoder ablation (running), LoRA rank/targets (queued), Colab Prithvi seeds.
+
+## 2026-09-11, Colab batch 1: Prithvi frozen seeds 1-2 (64 runs total)
+- Merged 8 Colab runs: `prithvi_frozen` seeds 1-2 at 1.0 / 0.25 / 0.10 / 0.05 (~27 GPU-min each on T4, 3x slower than the local 3070 Ti).
+- Frozen with 3 seeds (test water IoU): 100 % 0.701 ± 0.005, 25 % 0.725 ± 0.024, 10 % 0.708 ± 0.022, 5 % 0.724 ± 0.034. Completely flat in the label count, as expected for a fixed encoder, and 8-12 points below the U-Nets everywhere.
+- **The 8 `prithvi_lora` seed-1/2 runs on Colab all failed**, each after ~45 s (only `config.yaml` written, timestamps 14:09-14:15). The frozen runs on the same machine and the same LoRA config locally both work, so the suspect is the `peft` version Colab installs vs the local 0.20.0. Waiting on `runs/prithvi_lora_f1.00_s1.log` from Drive to see the traceback.
+- Decoder ablation (local, seed 0): LoRA + multi-scale UNet decoder 0.790 test / 0.772 Bolivia at 100 % (FCN head: 0.778 / 0.725) and 0.760 at 5 % (FCN: 0.719). The better decoder recovers 1-4 points and most of the Bolivia gap but still trails the U-Net by 3-5 points: **the shortfall is in the encoder representation for this task, not in the head.**
+- LoRA rank ablation (local, seed 0, 100 %): r=4 -> 0.740 test / 0.678 Bolivia vs r=8 -> 0.778 / 0.725. r=16 and the qkv+proj+fc variant are still to run (stopped mid-run when the laptop was needed).
