@@ -1,0 +1,60 @@
+seed: 0
+runs_dir: runs
+model:
+  tag: prithvi_lora_r4
+  name: prithvi
+  backbone: prithvi_eo_v2_300
+  pretrained: true
+  finetune: lora
+  lora_r: 4
+  lora_alpha: 8
+  lora_dropout: 0.05
+  lora_targets:
+  - qkv
+  feature_layers:
+  - -4
+  - -3
+  - -2
+  - -1
+  img_size: 224
+  num_classes: 2
+data:
+  root: data/sen1floods11
+  bands:
+  - B2
+  - B3
+  - B4
+  - B8A
+  - B11
+  - B12
+  use_s1: false
+  train_fraction: 1.0
+  cache: true
+  mean:
+  - 1396.0347
+  - 1364.0612
+  - 1218.2285
+  - 3077.4822
+  - 2030.6476
+  - 1179.1661
+  std:
+  - 739.0945
+  - 735.2482
+  - 864.9367
+  - 1196.4426
+  - 980.8706
+  - 764.6084
+train:
+  epochs: 50               # fallback when total_steps is unset
+  total_steps: 1550        # = 50 epochs x 31 steps at full labels; same budget for every label fraction
+  batch_size: 8
+  eval_batch_size: 2
+  crop_size: 224
+  lr: 0.001
+  backbone_lr_mult: 0.5
+  weight_decay: 0.01
+  warmup_steps: 100
+  grad_clip: 1.0
+  amp: true
+  num_workers: 0
+  class_weights: null

@@ -121,3 +121,8 @@ Template:
 
 - Reading: with 3 seeds, in-distribution std is 0.003-0.03 for the U-Nets; **every U-Net point is >= 0.79 and every Prithvi point is <= 0.78**, so the ordering is outside seed noise. ImageNet init is consistently +1-2 points over scratch (0.827 vs 0.823 at 100 %, 0.827 vs 0.803 at 10 %). Bolivia std is 0.01-0.11 (scratch at 25 % has one outlier seed at 0.55), which confirms the OOD split is too small/cloudy to rank models finely; report it with error bars and do not over-interpret.
 - Next (tomorrow): Prithvi frozen + LoRA seeds 1-2 on Colab; tiny-fraction subset seeds; decoder and LoRA-rank ablations.
+
+## 2026-09-11 (week 2, day 3)
+- Did: disk was at 30 GB free; `runs/` held 32 GB because every Prithvi run saved the full 1.2 GB state dict twice. Deleted all `last.pt` and the non-essential Prithvi `best.pt` (27 GB freed; kept the three f=1.0 seed-0 Prithvi checkpoints). Training now saves **only trainable tensors + buffers** (`trainable_state_dict`), and `load_checkpoint` rebuilds frozen weights from the config and verifies nothing trainable is missing; old full checkpoints still load (LoRA f=1.0 Bolivia 0.7248 reproduced).
+- Did: `MultiScaleUNetDecoder` (four encoder depths 6/12/18/24 -> x4/x2/x1/x0.5 pyramid -> UNet merge). Prithvi LoRA trainable params: FCN head 2.23 M, UNet decoder 4.65 M (head 3.86 M). Config `prithvi_lora_unetdec`. LoRA ablation configs: `prithvi_lora_r4`, `prithvi_lora_r16`, `prithvi_lora_wide` (qkv+proj+fc1+fc2).
+- Queues: Colab runs Prithvi frozen + LoRA seeds 1-2 (16 runs). Local: q6 = 2 % / 1 % subset seeds 1-2 for both U-Nets and LoRA (12 runs), then q7 = decoder ablation at 100 % and 5 %, then q8 = LoRA rank / target ablation at 100 %.
