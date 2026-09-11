@@ -36,3 +36,23 @@ def test_resolve_epochs_keeps_step_budget():
     assert resolve_epochs({"epochs": 50, "total_steps": 1550}, 31) == 50
     assert resolve_epochs({"epochs": 50, "total_steps": 1550}, 3) == 517   # 10 % labels
     assert resolve_epochs({"epochs": 50, "total_steps": 1550}, 1) == 1550  # 5 % labels
+
+
+def test_partial_checkpoint_roundtrip(tmp_path):
+    from eoflood.train import load_checkpoint, trainable_state_dict
+
+    cfg = {"model": {"name": "unet", "tag": "unet_scratch", "encoder": "resnet18", "encoder_weights": None}}
+    model = build_model(cfg, in_channels=6)
+    # freeze the encoder: the checkpoint must then contain only decoder/head params + buffers
+    for p in model.encoder.parameters():
+        p.requires_grad = False
+    sd = trainable_state_dict(model)
+    assert not any(k.startswith("encoder.") and not k.endswith(("running_mean", "running_var", "num_batches_tracked")) for k in sd)
+    torch.save({"model": sd, "epoch": 0, "cfg": cfg}, tmp_path / "best.pt")
+    fresh = build_model(cfg, in_channels=6)
+    for p in fresh.encoder.parameters():
+        p.requires_grad = False
+    load_checkpoint(fresh, tmp_path / "best.pt", torch.device("cpu"))
+    # the loaded (trainable) tensors must match exactly; the frozen encoder is rebuilt, not loaded
+    for k, v in sd.items():
+        assert torch.equal(fresh.state_dict()[k], v)

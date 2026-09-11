@@ -16,6 +16,7 @@ from torch.utils.data import DataLoader
 from .data import build_datasets
 from .metrics import SegMetrics
 from .models import build_model
+from .train import load_checkpoint
 from .utils import get_device, load_config
 
 
@@ -32,7 +33,7 @@ def main(argv: list[str] | None = None) -> None:
     device = get_device()
     ds = build_datasets(cfg)[args.split]
     model = build_model(cfg, in_channels=ds.in_channels).to(device)
-    model.load_state_dict(torch.load(run / args.ckpt, map_location=device)["model"])
+    load_checkpoint(model, run / args.ckpt, device)
     model.eval()
 
     loader = DataLoader(ds, batch_size=cfg["train"].get("eval_batch_size", 4), shuffle=False)
