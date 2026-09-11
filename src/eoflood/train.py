@@ -73,6 +73,26 @@ def build_optimizer(model: nn.Module, cfg: dict) -> torch.optim.Optimizer:
     return torch.optim.AdamW(groups, weight_decay=t.get("weight_decay", 0.01))
 
 
+def trainable_state_dict(model: nn.Module) -> dict:
+    """State dict restricted to parameters with requires_grad (plus all buffers, e.g. BatchNorm stats)."""
+    trainable = {n for n, p in model.named_parameters() if p.requires_grad}
+    buffers = {n for n, _ in model.named_buffers()}
+    return {k: v for k, v in model.state_dict().items() if k in trainable or k in buffers}
+
+
+def load_checkpoint(model: nn.Module, path, device) -> dict:
+    """Load a (possibly partial) checkpoint written by ``trainable_state_dict``."""
+    ck = torch.load(path, map_location=device)
+    missing, unexpected = model.load_state_dict(ck["model"], strict=False)
+    if unexpected:
+        raise RuntimeError(f"unexpected keys in checkpoint {path}: {unexpected[:5]}")
+    frozen = {n for n, p in model.named_parameters() if not p.requires_grad}
+    bad = [k for k in missing if k not in frozen]
+    if bad:
+        raise RuntimeError(f"checkpoint {path} lacks trainable tensors: {bad[:5]}")
+    return ck
+
+
 def resolve_epochs(t: dict, steps_per_epoch: int) -> int:
     """Number of epochs to run.
 
@@ -165,13 +185,14 @@ def main(argv: list[str] | None = None) -> None:
         logger.log(row)
         print(f"epoch {epoch:3d} loss {row['train_loss']:.4f} val water IoU {val['water_iou']:.4f} mIoU {val['miou']:.4f}")
 
-        torch.save({"model": model.state_dict(), "epoch": epoch, "cfg": cfg}, out / "last.pt")
         if val["water_iou"] > best_iou:
             best_iou, best_epoch = val["water_iou"], epoch
-            torch.save({"model": model.state_dict(), "epoch": epoch, "cfg": cfg}, out / "best.pt")
+            # Only trainable tensors are stored: a LoRA / frozen Prithvi checkpoint is a few MB
+            # instead of 1.2 GB. Frozen weights are rebuilt from the config at load time.
+            torch.save({"model": trainable_state_dict(model), "epoch": epoch, "cfg": cfg}, out / "best.pt")
 
     # Final evaluation with the best checkpoint on the held-out splits.
-    model.load_state_dict(torch.load(out / "best.pt", map_location=device)["model"])
+    load_checkpoint(model, out / "best.pt", device)
     final = {
         "best_epoch": best_epoch,
         "epochs": epochs,
