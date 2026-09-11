@@ -75,6 +75,7 @@ class PrithviSegmenter(nn.Module):
         feature_layers: list[int] | None = None,
         img_size: int = 224,
         pretrained: bool = True,
+        decoder: str = "fcn",
     ):
         super().__init__()
         if finetune not in FINETUNE_MODES:
@@ -104,9 +105,19 @@ class PrithviSegmenter(nn.Module):
         self.finetune = finetune
         self._apply_finetune_mode(lora_r, lora_alpha, lora_dropout, lora_targets or ["qkv"])
 
-        # Default: last four layers of a 24-layer ViT-L; overridable for smaller backbones.
-        self.feature_layers = feature_layers or [-4, -3, -2, -1]
-        self.head = FCNHead(embed_dim * len(self.feature_layers), num_classes)
+        self.decoder = decoder
+        if decoder == "fcn":
+            # Default: last four layers of a 24-layer ViT-L, concatenated at one scale.
+            self.feature_layers = feature_layers or [-4, -3, -2, -1]
+            self.head = FCNHead(embed_dim * len(self.feature_layers), num_classes)
+        elif decoder == "unet":
+            # Four depths, shallow -> deep, turned into a x4 / x2 / x1 / x0.5 pyramid.
+            from .decoders import MultiScaleUNetDecoder
+
+            self.feature_layers = feature_layers or [5, 11, 17, 23]
+            self.head = MultiScaleUNetDecoder(embed_dim, num_classes, patch=self.patch_size)
+        else:
+            raise ValueError(f"decoder must be 'fcn' or 'unet', got {decoder!r}")
 
     # ------------------------------------------------------------------ fine-tuning modes
     def _apply_finetune_mode(self, r, alpha, dropout, targets):
@@ -135,7 +146,7 @@ class PrithviSegmenter(nn.Module):
         gh, gw = math.ceil(H / self.patch_size), math.ceil(W / self.patch_size)
         feats = self._encode(x)
         maps = [tokens_to_map(feats[i], gh, gw) for i in self.feature_layers]
-        logits = self.head(torch.cat(maps, dim=1))
+        logits = self.head(maps) if self.decoder == "unet" else self.head(torch.cat(maps, dim=1))
         if logits.shape[-2:] != (H, W):
             logits = F.interpolate(logits, size=(H, W), mode="bilinear", align_corners=False)
         return logits

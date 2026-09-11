@@ -35,6 +35,7 @@ def build_model(cfg: dict, in_channels: int) -> nn.Module:
             feature_layers=m.get("feature_layers"),
             img_size=m.get("img_size", 224),
             pretrained=m.get("pretrained", True),
+            decoder=m.get("decoder", "fcn"),
         )
 
     raise ValueError(f"unknown model name {name!r}")
