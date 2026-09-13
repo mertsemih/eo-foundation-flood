@@ -7,6 +7,7 @@
 \usepackage{hyperref}
 \usepackage{xcolor}
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\input{tables/stats}
 
 \begin{document}
 
@@ -70,23 +71,38 @@ AdamW, cosine learning-rate schedule with linear warm-up, mixed precision, cross
 
 \section{Results}
 \subsection{Full-label regime}
-\todo{Table~\ref{tab:full}: five models at $f=1$. Test and Bolivia water IoU, mIoU, F1, trainable params, GPU-min. Current single-seed numbers: U-Net scratch test 0.823 / Bolivia 0.750.}
+Table~\ref{tab:full} reports all five models at $f=1$; the study comprises \nruns{} training runs in total. \todo{prose once the LoRA seeds are in}
 
 \begin{table}[t]
 \centering
-\caption{All training labels ($f=1$). Mean $\pm$ std over 3 seeds.}
+\caption{All training labels ($f=1$). Water IoU on the test split and on the held-out Bolivia split, mean $\pm$ std over three seeds ($\dagger$: single seed). GPU minutes on an RTX~3070~Ti (8\,GB).}
 \label{tab:full}
-\begin{tabular}{lrrrr}
-\toprule
-Model & Trainable & Test IoU$_w$ & Bolivia IoU$_w$ & GPU min \\
-\midrule
-U-Net (scratch) & 24.4\,M & \todo{} & \todo{} & \todo{} \\
-U-Net (ImageNet) & 24.4\,M & & & \\
-Prithvi frozen & 1.4\,M & & & \\
-Prithvi LoRA & 2.2\,M & & & \\
-Prithvi full & 305\,M & & & \\
-\bottomrule
-\end{tabular}
+\small
+\input{tables/table_full}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Test water IoU vs.\ training-label fraction (number of chips in parentheses). Best per row in bold.}
+\label{tab:sweep}
+\small
+\input{tables/table_sweep_test}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Bolivia (held-out region) water IoU vs.\ training-label fraction.}
+\label{tab:sweep_bolivia}
+\small
+\input{tables/table_sweep_bolivia}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Ablations at $f=1$: LoRA rank, LoRA target modules, and decoder ($\dagger$: single seed).}
+\label{tab:ablation}
+\small
+\input{tables/table_ablation}
 \end{table}
 
 \subsection{Low-label regime}
