@@ -1,0 +1,11 @@
+\begin{tabular}{llrrrr}
+\toprule
+Model & Pretraining & Trainable & Test IoU$_w$ & Bolivia IoU$_w$ & GPU min \\
+\midrule
+U-Net (scratch) & -- & 24.4\,M & 0.823 $\pm$ 0.008 & 0.766 $\pm$ 0.021 & 4.9 \\
+U-Net (ImageNet) & ImageNet & 24.4\,M & \textbf{0.829 $\pm$ 0.015} & \textbf{0.781 $\pm$ 0.007} & 4.9 \\
+Prithvi frozen & Prithvi-EO 2.0 & 1.4\,M & 0.701 $\pm$ 0.005 & 0.606 $\pm$ 0.083 & 22.1 \\
+Prithvi LoRA (r=8) & Prithvi-EO 2.0 & 2.2\,M & 0.778$^\dagger$ & 0.725$^\dagger$ & 13.3 \\
+Prithvi full FT & Prithvi-EO 2.0 & 305\,M & 0.770 $\pm$ 0.010 & 0.695 $\pm$ 0.050 & 9.3 \\
+\bottomrule
+\end{tabular}

@@ -1,0 +1,11 @@
+\begin{tabular}{lrrr}
+\toprule
+Variant & Trainable & Test IoU$_w$ & Bolivia IoU$_w$ \\
+\midrule
+LoRA r=4, qkv & 1.83\,M & 0.740$^\dagger$ & 0.678$^\dagger$ \\
+LoRA r=8, qkv (main) & 2.23\,M & 0.778$^\dagger$ & 0.725$^\dagger$ \\
+LoRA r=16, qkv & 3.01\,M & 0.739$^\dagger$ & 0.670$^\dagger$ \\
+LoRA r=8, qkv+proj+fc1+fc2 & 4.61\,M & 0.752$^\dagger$ & 0.632$^\dagger$ \\
+LoRA r=8, qkv + multi-scale UNet decoder & 4.65\,M & 0.776 $\pm$ 0.014 & 0.730 $\pm$ 0.038 \\
+\bottomrule
+\end{tabular}
