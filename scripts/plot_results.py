@@ -34,6 +34,14 @@ LABELS = {
 }
 
 
+LABEL_OFFSETS = {
+    "unet_imagenet": (-6, 4, "right"),
+    "unet_scratch": (-6, -10, "right"),
+    "prithvi_lora_r16": (6, -10, "left"),
+    "prithvi_full": (-6, 6, "right"),
+}
+
+
 def agg(df: pd.DataFrame, metric: str) -> pd.DataFrame:
     g = df.groupby(["model", "train_fraction"])[metric]
     return g.agg(["mean", "min", "max", "count"]).reset_index()
@@ -73,7 +81,7 @@ def fig_ood_gap(df: pd.DataFrame, out: Path) -> None:
     ax.bar([i - 0.2 for i in x], a.test_water_iou, width=0.4, label="test")
     ax.bar([i + 0.2 for i in x], a.bolivia_water_iou, width=0.4, label="Bolivia")
     ax.set_xticks(list(x))
-    ax.set_xticklabels([LABELS.get(m, m) for m in a.index], rotation=20, fontsize=8)
+    ax.set_xticklabels([LABELS.get(m, m) for m in a.index], rotation=35, ha="right", rotation_mode="anchor", fontsize=8)
     ax.set_ylabel("water IoU (100 % labels)")
     ax.set_ylim(0.5, 1.0)
     ax.grid(axis="y", alpha=0.3)
@@ -91,7 +99,9 @@ def fig_params(df: pd.DataFrame, out: Path) -> None:
     fig, ax = plt.subplots(figsize=(6, 4))
     for m, r in a.iterrows():
         ax.scatter(r.trainable_params, r.test_water_iou, s=60)
-        ax.annotate(LABELS.get(m, m), (r.trainable_params, r.test_water_iou), textcoords="offset points", xytext=(5, 5), fontsize=8)
+        # hand-placed offsets where labels of neighbouring points would collide
+        dx, dy, ha = LABEL_OFFSETS.get(m, (5, 5, "left"))
+        ax.annotate(LABELS.get(m, m), (r.trainable_params, r.test_water_iou), textcoords="offset points", xytext=(dx, dy), ha=ha, fontsize=8)
     ax.set_xscale("log")
     ax.set_xlabel("trainable parameters")
     ax.set_ylabel("test water IoU (100 % labels)")

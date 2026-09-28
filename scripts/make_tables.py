@@ -5,6 +5,8 @@
 Writes paper/tables/table_full.tex (all models at 100 % labels), paper/tables/table_sweep.tex
 (test / Bolivia water IoU vs label fraction) and paper/tables/table_ablation.tex (LoRA rank,
 targets, decoder). Cells are mean ± std over seeds; single-seed cells carry a dagger.
+GPU minutes in the full-label table come from the seed-0 run of each model, because every
+seed-0 run ran on the local RTX 3070 Ti while some later seeds ran on a ~3x slower Colab T4.
 """
 
 from __future__ import annotations
@@ -48,7 +50,7 @@ def best_model(df: pd.DataFrame, frac: float, key: str, models: list[str]) -> st
     return rows.sort_values(f"{key}_iou_mean", ascending=False).iloc[0].model
 
 
-def table_full(df: pd.DataFrame) -> str:
+def table_full(df: pd.DataFrame, runs: pd.DataFrame) -> str:
     models = [m for m, *_ in MAIN]
     bt, bb = best_model(df, 1.0, "test", models), best_model(df, 1.0, "bolivia", models)
     lines = [
@@ -58,8 +60,8 @@ def table_full(df: pd.DataFrame) -> str:
         "\\midrule",
     ]
     for m, label, pre, params in MAIN:
-        r = df[(df.model == m) & (df.train_fraction == 1.0)]
-        gpu = f"{r.iloc[0].gpu_min:.1f}" if not r.empty else "--"
+        r = runs[(runs.model == m) & (runs.train_fraction == 1.0) & (runs.seed == 0)]
+        gpu = f"{r.iloc[0].gpu_minutes:.1f}" if not r.empty else "--"
         lines.append(f"{label} & {pre} & {params} & {cell(df, m, 1.0, 'test', m == bt)} & {cell(df, m, 1.0, 'bolivia', m == bb)} & {gpu} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     return "\n".join(lines)
@@ -91,19 +93,21 @@ def table_ablation(df: pd.DataFrame) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--summary", default="results/summary.csv")
+    ap.add_argument("--results", default="results/results.csv")
     ap.add_argument("--out", default="paper/tables")
     args = ap.parse_args()
     df = pd.read_csv(args.summary)
+    runs = pd.read_csv(args.results)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "table_full.tex").write_text(table_full(df) + "\n", encoding="utf-8")
+    (out / "table_full.tex").write_text(table_full(df, runs) + "\n", encoding="utf-8")
     (out / "table_sweep_test.tex").write_text(table_sweep(df, "test") + "\n", encoding="utf-8")
     (out / "table_sweep_bolivia.tex").write_text(table_sweep(df, "bolivia") + "\n", encoding="utf-8")
     (out / "table_ablation.tex").write_text(table_ablation(df) + "\n", encoding="utf-8")
     n_runs = int(df.seeds.sum())
     (out / "stats.tex").write_text(f"\\newcommand{{\\nruns}}{{{n_runs}}}\n", encoding="utf-8")
     print(f"tables written to {out} ({n_runs} runs)")
-    print(table_full(df))
+    print(table_full(df, runs))
 
 
 if __name__ == "__main__":
