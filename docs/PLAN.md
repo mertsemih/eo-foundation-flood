@@ -65,6 +65,11 @@ Weeks 1–4 and most of weeks 5–8 are done: 41 runs, seed 0 for every model fr
 4. LoRA ablation: rank 4 / 16 and targets `qkv+proj+fc1+fc2` at 100 % (3 runs).
 5. Then: freeze figures, fill Table 1 and the results section of `paper/main.tex`.
 
+### Status after 28 Sep: experiments complete (84 runs)
+Items 1–4 above are done; every main-matrix cell has 3 seeds (ablation r=4 / r=16 / wide targets stay single-seed). With LoRA seeds in, the Bolivia advantage of LoRA over full FT shrank from 9 pts (seed 0) to 2 pts (0.717 ± 0.019 vs 0.695 ± 0.050), inside the noise: the claim is now "LoRA matches full FT with 140x fewer trainable parameters", not "LoRA transfers better".
+
+**Next:** write the paper prose — results (Sec. 5), discussion, related work, conclusion, abstract last; fill the lr / batch / epochs TODO in Sec. 4.3.
+
 ### Weeks 5–6 — LoRA and full fine-tune
 - [ ] `prithvi_lora`: confirm trainable-parameter count is a few million, not 300M. Tune `backbone_lr_mult`, `lora_r` ∈ {4, 8, 16}.
 - [ ] `prithvi_full` with the largest batch that fits; gradient checkpointing if needed.
