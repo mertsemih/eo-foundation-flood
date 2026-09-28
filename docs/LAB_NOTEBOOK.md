@@ -168,3 +168,9 @@ Template:
 - Reading: the seed-0 number at 100 % (0.778) was the best of three; the mean is 0.767, equal to full FT (0.770 ± 0.010). **The single-seed "LoRA beats full FT by 9 pts on Bolivia" does not survive:** 0.717 ± 0.019 vs 0.695 ± 0.050 is a 2-pt difference inside full FT's spread. Claim 3 becomes "LoRA matches full FT at 1/140 of the trainable parameters".
 - The U-Net gap is unchanged: 6-8 pts at every fraction (e.g. 5 %: U-Net ImageNet 0.814 ± 0.010 vs LoRA 0.741 ± 0.018).
 - Next: paper prose.
+
+## 2026-09-28, qualitative predictions and pixel-level error analysis
+- Did: `scripts/qualitative.py` predicts every test / Bolivia chip with the seed-0, f=1 checkpoints (cached in `runs/<run>/preds_<split>.npz`), writes `results/per_chip_iou.csv` and `results/error_analysis.csv`, and draws `fig4_predictions.png`. Chips picked by rule (>= 5 % water, 50th / 75th percentile of the per-chip U-Net ImageNet minus LoRA IoU difference), not by eye. Aggregate IoUs reproduce the seed-0 `test_metrics.json`.
+- Result (test split): recall on water bodies < 1,000 px (0.1 km2, 11 % of the water pixels) is 0.68-0.69 for the U-Nets vs 0.48 LoRA / 0.43 full; on larger bodies 0.90-0.93 for all. Same ordering at 500 and 2,000 px.
+- Result: 77 % of Prithvi's errors lie within 3 px of a label water edge vs 64-65 % for the U-Nets. LoRA near-edge errors 484 k px vs 319-342 k (U-Nets); far-from-edge 144 k vs 172-192 k. Within 1 px the shares are equal (44-46 %), so Prithvi shifts boundaries by a few px. Precision on par (0.89-0.91), recall lower (0.85-0.86 vs 0.89-0.90).
+- Reading: the shortfall is spatial resolution (16-px patches), not a general representation problem; next test would be a decoder with a full-resolution skip from the input. Added as Sec. V-F and Fig. 4 in the paper; abstract, contributions, discussion and conclusion updated.
