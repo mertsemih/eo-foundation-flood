@@ -153,3 +153,18 @@ Template:
 - **LoRA ablation (seed 0, 100 %):** r=4 0.740, r=8 0.778, r=16 0.739, qkv+proj+fc1+fc2 0.752 (Bolivia 0.632). r=8 on qkv is the best setting; wider adaptation overfits the training regions. Single-seed, so the differences of 3-4 points are suggestive rather than conclusive.
 - **Full FT with 3 seeds:** 0.770 ± 0.010 test, 0.695 ± 0.050 Bolivia. LoRA (2.2 M) is at least as good as full FT (305 M) in-distribution and better on Bolivia: claim 3 stands with error bars.
 - Frozen at 2 % / 1 %: 0.694 ± 0.016 and 0.690 ± 0.012; the frozen curve is flat from 100 % to 1 %.
+
+## 2026-09-28, queue q10: LoRA seeds 1-2 done, 84 runs, experiments complete
+- Did: the 8 `prithvi_lora` seed-1/2 runs at 100 / 25 / 10 / 5 % that failed on Colab, run locally instead (3070 Ti, 8.9-11.3 min each, 77 min in total). Every cell of the main matrix now has 3 seeds. Tables, `stats.tex` and figures regenerated.
+- Prithvi LoRA with 3 seeds (test / Bolivia water IoU):
+
+  | labels | test | Bolivia |
+  |---|---|---|
+  | 100 % | 0.767 ± 0.011 | 0.717 ± 0.019 |
+  | 25 % | 0.758 ± 0.007 | 0.738 ± 0.010 |
+  | 10 % | 0.742 ± 0.009 | 0.746 ± 0.010 |
+  | 5 % | 0.741 ± 0.018 | 0.741 ± 0.009 |
+
+- Reading: the seed-0 number at 100 % (0.778) was the best of three; the mean is 0.767, equal to full FT (0.770 ± 0.010). **The single-seed "LoRA beats full FT by 9 pts on Bolivia" does not survive:** 0.717 ± 0.019 vs 0.695 ± 0.050 is a 2-pt difference inside full FT's spread. Claim 3 becomes "LoRA matches full FT at 1/140 of the trainable parameters".
+- The U-Net gap is unchanged: 6-8 pts at every fraction (e.g. 5 %: U-Net ImageNet 0.814 ± 0.010 vs LoRA 0.741 ± 0.018).
+- Next: paper prose.
