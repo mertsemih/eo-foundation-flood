@@ -1,0 +1,11 @@
+\begin{tabular}{lrrr}
+\toprule
+Varyant & Eğitilen & Test IoU$_s$ & Bolivya IoU$_s$ \\
+\midrule
+LoRA r=4, qkv & 1,83\,M & 0,740$^\dagger$ & 0,678$^\dagger$ \\
+LoRA r=8, qkv (ana) & 2,23\,M & 0,767 $\pm$ 0,011 & 0,717 $\pm$ 0,019 \\
+LoRA r=16, qkv & 3,01\,M & 0,739$^\dagger$ & 0,670$^\dagger$ \\
+LoRA r=8, qkv+proj+fc1+fc2 & 4,61\,M & 0,752$^\dagger$ & 0,632$^\dagger$ \\
+LoRA r=8, qkv + çok ölçekli UNet kod çözücü & 4,65\,M & 0,776 $\pm$ 0,014 & 0,730 $\pm$ 0,038 \\
+\bottomrule
+\end{tabular}

@@ -44,6 +44,14 @@ LABELS = {
     "prithvi_full": "Prithvi full FT",
     "prithvi_lora_unetdec": "Prithvi LoRA + UNet dec.",
 }
+TEXT = {
+    "en": {"label": "label", "test": "test", "bolivia": "Bolivia", "dec": ".", "suffix": "", "models": LABELS,
+           "legend": ["no water", "water (correct)", "false water", "missed water", "no data / cloud"]},
+    "tr": {"label": "etiket", "test": "test", "bolivia": "Bolivya", "dec": ",", "suffix": "_tr",
+           "models": {**LABELS, "unet_scratch": "U-Net (sıfırdan)", "prithvi_frozen": "Prithvi donuk",
+                      "prithvi_full": "Prithvi tam ince ayar", "prithvi_lora_unetdec": "Prithvi LoRA + UNet k. çözücü"},
+           "legend": ["su yok", "su (doğru)", "yanlış su", "kaçırılan su", "veri yok / bulut"]},
+}
 SPLITS = ["test", "bolivia"]
 # error-map colours: true negative, true positive, false positive, false negative, no-data
 COLORS = np.array([[240, 240, 240], [33, 102, 172], [230, 97, 0], [197, 27, 125], [90, 90, 90]], dtype=np.uint8)
@@ -194,27 +202,32 @@ def main() -> None:
 
     sel = [(s, c) for s in SPLITS for c in pick(chips[chips.split == s])]
     ncol = 2 + len(FIG_MODELS)
-    fig, axes = plt.subplots(len(sel), ncol, figsize=(1.55 * ncol, 1.85 * len(sel)))
-    for r, (split, chip) in enumerate(sel):
-        names = list(chips[chips.split == split].chip)
-        i = names.index(chip)
-        xs, ys = data[split]
-        panels = [(rgb(xs[i]), f"{chip.replace('_', ' ')}"), (label_map(ys[i]), "label")]
-        for m in FIG_MODELS:
-            p = preds[(m, split)][i]
-            panels.append((error_map(p, ys[i]), f"{LABELS[m]}\nIoU {water_iou(p, ys[i]):.2f}"))
-        for c, (img, title) in enumerate(panels):
-            ax = axes[r, c]
-            ax.imshow(img, interpolation="nearest")
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_title(title, fontsize=7)
-        axes[r, 0].set_ylabel("test" if split == "test" else "Bolivia", fontsize=8)
-    legend = [Patch(color=COLORS[k] / 255, label=t) for k, t in enumerate(["no water", "water (correct)", "false water", "missed water", "no data / cloud"])]
-    fig.legend(handles=legend, loc="lower center", ncol=5, fontsize=7, frameon=False)
-    fig.subplots_adjust(left=0.03, right=0.995, top=0.95, bottom=0.05, wspace=0.04, hspace=0.3)
-    fig.savefig(out / "fig4_predictions.png", dpi=200)
-    print(f"figure written to {out / 'fig4_predictions.png'} ({sel})")
+    # the same figure in English (paper/main.tex) and Turkish (paper/main_tr.tex, decimal commas)
+    for lang, txt in TEXT.items():
+        fig, axes = plt.subplots(len(sel), ncol, figsize=(1.55 * ncol, 1.85 * len(sel)))
+        for r, (split, chip) in enumerate(sel):
+            names = list(chips[chips.split == split].chip)
+            i = names.index(chip)
+            xs, ys = data[split]
+            panels = [(rgb(xs[i]), f"{chip.replace('_', ' ')}"), (label_map(ys[i]), txt["label"])]
+            for m in FIG_MODELS:
+                p = preds[(m, split)][i]
+                iou = f"{water_iou(p, ys[i]):.2f}".replace(".", txt["dec"])
+                panels.append((error_map(p, ys[i]), f"{txt['models'][m]}\nIoU {iou}"))
+            for c, (img, title) in enumerate(panels):
+                ax = axes[r, c]
+                ax.imshow(img, interpolation="nearest")
+                ax.set_xticks([])
+                ax.set_yticks([])
+                ax.set_title(title, fontsize=7)
+            axes[r, 0].set_ylabel(txt[split], fontsize=8)
+        legend = [Patch(color=COLORS[k] / 255, label=t) for k, t in enumerate(txt["legend"])]
+        fig.legend(handles=legend, loc="lower center", ncol=5, fontsize=7, frameon=False)
+        fig.subplots_adjust(left=0.03, right=0.995, top=0.95, bottom=0.05, wspace=0.04, hspace=0.3)
+        path = out / f"fig4_predictions{txt['suffix']}.png"
+        fig.savefig(path, dpi=200)
+        plt.close(fig)
+        print(f"figure written to {path} ({sel})")
 
 
 if __name__ == "__main__":
