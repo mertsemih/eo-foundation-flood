@@ -1,31 +1,49 @@
 # eo-foundation-flood
 
-Parameter-efficient fine-tuning of Earth-observation foundation models (Prithvi-EO 2.0, later Clay) for flood segmentation on Sentinel-2, benchmarked against from-scratch and ImageNet-pretrained U-Nets on **Sen1Floods11**.
+Code, configurations and per-run results for the paper
+
+**How Much Do Earth-Observation Foundation Models Help Flood Mapping When Labels Are Scarce? Frozen, LoRA and Full Fine-Tuning of Prithvi-EO 2.0 on Sen1Floods11** — Mert Semih Sarıyerli, 2026. [Preprint (PDF)](paper/preprint.pdf)
+
+A controlled comparison of two U-Nets (from scratch, ImageNet-initialized) with the Prithvi-EO 2.0 foundation model under three fine-tuning regimes (frozen encoder, LoRA, full fine-tuning) for Sentinel-2 flood segmentation on **Sen1Floods11**, from 100 % down to 1 % of the training labels.
 
 ## Research question
 
 > How much does an EO foundation model buy over a conventional U-Net in the **low-label regime**, and which fine-tuning strategy (frozen encoder / LoRA / full fine-tune) gives the best accuracy per trainable parameter, including on the **out-of-distribution Bolivia split**?
 
-The experiment matrix is fixed up front (see [docs/PLAN.md](docs/PLAN.md)) so results are comparable and the write-up is straightforward:
-
 | axis | values |
 |---|---|
-| model | `unet_scratch`, `unet_imagenet`, `prithvi_frozen`, `prithvi_lora`, `prithvi_full` |
-| training labels | 100 %, 25 %, 10 %, 5 % of hand-labeled chips |
-| seeds | 3 |
+| model | `unet_scratch`, `unet_imagenet`, `prithvi_frozen`, `prithvi_lora`, `prithvi_full` (100 % labels only), plus LoRA rank / target / decoder ablations |
+| training labels | 100 %, 25 %, 10 %, 5 %, 2 %, 1 % of the 252 hand-labeled training chips |
+| seeds | 3 (the seed also draws the label subset) |
+| budget | about 1,550 optimizer steps for every run |
 | evaluation | Sen1Floods11 test split (in-distribution) + Bolivia split (held-out region) |
-| metrics | water IoU, mIoU, water F1, trainable params, GPU-hours |
+| metrics | water IoU, mIoU, water F1, trainable params, GPU minutes |
 
-## Status
+## Results
 
-- [x] Repository skeleton, config-driven training loop, metrics, tests
-- [x] Dataset downloaded and band statistics computed (`scripts/compute_stats.py`)
-- [x] U-Net baselines + label sweep (seed 0): scratch 0.823 / ImageNet 0.812 test water IoU at 100 % labels; still 0.78–0.80 at 5 % (`docs/figures/fig1_iou_vs_labels.png`)
-- [x] Prithvi frozen / LoRA / full at 100 % labels (seed 0): 0.699 / 0.778 / 0.779 test water IoU; LoRA beats full FT on Bolivia (0.725 vs 0.637)
-- [~] Label sweep 100 % → 1 % for all models (seed 0) and 3 seeds for the U-Nets: U-Nets ≥ 0.79 test water IoU at every fraction, Prithvi ≤ 0.78; Prithvi seeds and ablations pending
-- [ ] Write-up / preprint (weeks 10–12)
+84 training runs, 12.7 GPU-hours on an RTX 3070 Ti (8 GB) and a Colab T4. Test water IoU, mean ± std over three seeds:
 
-The Prithvi wrapper (`src/eoflood/models/prithvi.py`) was verified against terratorch 1.2.13 on 10 Sep (weights load, 224 and 512 inputs, frozen / LoRA / full modes: 1.4 M / 2.2 M / 305 M trainable parameters). Training runs on a local RTX 3070 Ti (8 GB); the U-Net baseline takes ~4 GPU-minutes with the in-RAM chip cache.
+| labels (chips) | U-Net scratch | U-Net ImageNet | Prithvi frozen | Prithvi LoRA |
+|---|---|---|---|---|
+| 100 % (252) | 0.823 ± 0.008 | **0.829 ± 0.015** | 0.701 ± 0.005 | 0.767 ± 0.011 |
+| 25 % (63) | 0.802 ± 0.031 | **0.820 ± 0.016** | 0.725 ± 0.024 | 0.758 ± 0.007 |
+| 10 % (25) | 0.803 ± 0.003 | **0.827 ± 0.005** | 0.708 ± 0.022 | 0.742 ± 0.009 |
+| 5 % (13) | 0.807 ± 0.031 | **0.814 ± 0.010** | 0.724 ± 0.034 | 0.741 ± 0.018 |
+| 2 % (5) | **0.809 ± 0.022** | 0.788 ± 0.021 | 0.694 ± 0.016 | 0.697 ± 0.013 |
+| 1 % (3) | 0.803 ± 0.013 | **0.809 ± 0.015** | 0.690 ± 0.012 | 0.704 ± 0.017 |
+
+Prithvi full fine-tuning at 100 %: 0.770 ± 0.010.
+
+- **The U-Nets lead at every label fraction**, and the gap to Prithvi LoRA grows from about 6 points at full labels to 10–11 points at 1–2 %.
+- **LoRA matches full fine-tuning** (0.767 vs 0.770) with about 140x fewer trainable parameters (2.2 M vs 305 M).
+- **Pretraining does not shrink the drop on the held-out Bolivia region**; the ImageNet U-Net transfers best.
+- **Where Prithvi loses:** a pixel-level error analysis (seed 0) puts its excess errors within a few pixels of water edges and on water bodies below 0.1 km², consistent with the 16-pixel patch resolution.
+
+![Water IoU vs label fraction](docs/figures/fig1_iou_vs_labels.png)
+
+![Error maps](docs/figures/fig4_predictions.png)
+
+Per-run metrics are in [results/results.csv](results/results.csv), the seed aggregates in [results/summary.csv](results/summary.csv), and the error analysis in [results/error_analysis.csv](results/error_analysis.csv) and [results/per_chip_iou.csv](results/per_chip_iou.csv). The day-by-day record of the experiments, including what did not work, is in [docs/LAB_NOTEBOOK.md](docs/LAB_NOTEBOOK.md).
 
 ## Setup
 
@@ -63,6 +81,16 @@ python -m eoflood.evaluate --run runs/prithvi_lora_f0.10_s1 --split bolivia
 
 Every run writes `config.yaml`, `metrics.csv`, `best.pt` and `test_metrics.json` under `runs/<name>/`.
 
+To reproduce the paper's tables and figures from finished runs:
+
+```bash
+python scripts/run_matrix.py --models unet_scratch unet_imagenet prithvi_frozen prithvi_lora --fractions 1.0 0.25 0.10 0.05 0.02 0.01 --seeds 0 1 2
+python scripts/collect_results.py      # runs/*/test_metrics.json -> results/results.csv, results/summary.csv
+python scripts/make_tables.py          # LaTeX tables in paper/tables
+python scripts/plot_results.py         # figures 1-3 in docs/figures
+python scripts/qualitative.py          # figure 4 and the pixel-level error analysis (needs the seed-0 checkpoints)
+```
+
 ## Layout
 
 ```
@@ -73,14 +101,26 @@ src/eoflood/
   metrics.py        confusion-matrix based IoU / F1 with ignore index
   train.py          training loop (AMP, cosine LR, best-checkpoint on val water IoU)
   evaluate.py       evaluation on any split, optional prediction dumps
-scripts/            download, statistics
+scripts/            download, statistics, run matrix, result tables, figures, error analysis
 tests/              unit tests on synthetic rasters (no data download needed)
-docs/               PLAN.md (12-week plan), DATASET.md, LAB_NOTEBOOK.md
+docs/               PLAN.md (12-week plan), DATASET.md, LAB_NOTEBOOK.md, figures
+paper/              LaTeX source (main.tex, Turkish main_tr.tex), generated tables, preprint.pdf
+results/            per-run and aggregated metrics (CSV)
 ```
 
 ## Citation
 
-If this work is useful, cite the Sen1Floods11 and Prithvi-EO 2.0 papers; a preprint of this study will be linked here when available.
+If this work is useful, please cite the preprint ([PDF](paper/preprint.pdf)) together with the Sen1Floods11 and Prithvi-EO 2.0 papers:
+
+```bibtex
+@misc{sariyerli2026eofloods,
+  title  = {How Much Do Earth-Observation Foundation Models Help Flood Mapping When Labels Are Scarce? Frozen, LoRA and Full Fine-Tuning of Prithvi-EO 2.0 on Sen1Floods11},
+  author = {Sar{\i}yerli, Mert Semih},
+  year   = {2026},
+  note   = {Preprint},
+  url    = {https://github.com/mertsemih/eo-foundation-flood}
+}
+```
 
 - Bonafilia et al., *Sen1Floods11: A georeferenced dataset to train and test deep learning flood algorithms for Sentinel-1*, CVPRW 2020.
 - Szwarcman et al., *Prithvi-EO-2.0: A Versatile Multi-Temporal Foundation Model for Earth Observation Applications*, 2024.

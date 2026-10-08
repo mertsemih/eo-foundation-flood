@@ -33,7 +33,6 @@ Thumbs.db
 
 # logs
 *.log
-results/
 
 # latex
 paper/*.aux

@@ -104,7 +104,7 @@ Template:
   | 1 % (3 chips) | 0.812 / 0.775 | 0.810 / 0.767 | 0.676 / 0.670 | 0.722 / 0.715 |
 
 - Reading: with the same 3 chips, U-Net 0.81 vs LoRA 0.72 vs frozen 0.68. The ordering U-Net > LoRA > frozen is identical at every fraction from 100 % down to 1 %; LoRA's curve keeps sliding (0.778 -> 0.706) while the U-Net stays flat within noise. The seed-0 1 % subset is water-rich (see above), so the absolute numbers at 1-2 % need subset seeds, but the *ordering* between models on the same subset is a fair comparison.
-- Local queue stopped after this run at the user's request (laptop needed for other work). Colab is running U-Net seeds 1-2 in parallel; results to be merged from Drive.
+- Local queue stopped after this run because the laptop was needed for other work. Colab is running U-Net seeds 1-2 in parallel; results to be merged from Drive.
 - Remaining for the paper: Prithvi seeds 1-2 (Colab), tiny-fraction subset seeds, Prithvi decoder ablation, LoRA rank ablation, then write.
 
 ## 2026-09-10, Colab U-Net seeds merged (41 runs total)

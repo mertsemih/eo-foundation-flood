@@ -53,7 +53,7 @@ Report on every run: val water IoU (selection), test water IoU / mIoU / F1, Boli
 ### Week 4 (29 Sep–5 Oct) — Prithvi comes alive
 - [ ] `pip install -e ".[foundation]"`. Load `prithvi_eo_v2_300` via terratorch in a notebook, run one forward pass on a batch, inspect the token shapes. Fix the `# CHECK` items in `models/prithvi.py`.
 - [ ] Get `prithvi_frozen` training end to end. It will be the fastest Prithvi variant; use it to debug.
-- [ ] NASA Space Apps Challenge is usually the first weekend of October: register with the Ankara local event, use this repo as your project demo if a flood/water challenge is offered.
+- [ ] NASA Space Apps Challenge is usually the first weekend of October: register with the Ankara local event, use this repo as my project demo if a flood/water challenge is offered.
 
 ### Status after 10 Sep (two working days)
 Weeks 1–4 and most of weeks 5–8 are done: 41 runs, seed 0 for every model from 100 % down to 1 % labels, 3 seeds for the U-Nets. Headline: U-Nets ≥ 0.79 test water IoU at every fraction, Prithvi LoRA 0.71–0.78, frozen ≈ 0.69, full FT = LoRA in-distribution but −9 pts on Bolivia. The paper is a controlled negative result for the foundation model on Sen1Floods11 plus a positive one for LoRA over full fine-tuning.
@@ -82,12 +82,12 @@ Items 1–4 above are done; every main-matrix cell has 3 seeds (ablation r=4 / r
 
 ### Week 9 — seeds and ablations
 - [ ] Seeds 1 and 2 for the main table. Report mean ± std.
-- [ ] One ablation you can afford: LoRA targets (`qkv` vs `qkv+proj+fc1+fc2`) or Prithvi's own normalization stats vs dataset stats.
+- [ ] One ablation I can afford: LoRA targets (`qkv` vs `qkv+proj+fc1+fc2`) or Prithvi's own normalization stats vs dataset stats.
 
 ### Weeks 10–11 — write
 - [ ] Results, discussion, limitations (single dataset, S2-only, 300M model only, no Clay yet).
 - [ ] Figures regenerated from `collect_results.py` output, not by hand.
-- [ ] Ask your BraTS advisor to read it; offer co-authorship if they contribute substantively.
+- [ ] Ask my BraTS advisor to read it; offer co-authorship if they contribute substantively.
 
 ### Week 12 — release
 - [ ] arXiv preprint (cs.CV, cross-list eess.IV). README gets the link and a results table.
