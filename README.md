@@ -2,7 +2,9 @@
 
 Code, configurations and per-run results for the paper
 
-**How Much Do Earth-Observation Foundation Models Help Flood Mapping When Labels Are Scarce? Frozen, LoRA and Full Fine-Tuning of Prithvi-EO 2.0 on Sen1Floods11** — Mert Semih Sarıyerli, 2026. [Preprint (PDF)](paper/preprint.pdf)
+**How Much Do Earth-Observation Foundation Models Help Flood Mapping When Labels Are Scarce? Frozen, LoRA and Full Fine-Tuning of Prithvi-EO 2.0 on Sen1Floods11** — Mert Semih Sarıyerli, 2026. Preprint: [doi:10.5281/zenodo.23105700](https://doi.org/10.5281/zenodo.23105700) · [PDF](paper/preprint.pdf)
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23105700.svg)](https://doi.org/10.5281/zenodo.23105700)
 
 A controlled comparison of two U-Nets (from scratch, ImageNet-initialized) with the Prithvi-EO 2.0 foundation model under three fine-tuning regimes (frozen encoder, LoRA, full fine-tuning) for Sentinel-2 flood segmentation on **Sen1Floods11**, from 100 % down to 1 % of the training labels.
 
@@ -110,15 +112,17 @@ results/            per-run and aggregated metrics (CSV)
 
 ## Citation
 
-If this work is useful, please cite the preprint ([PDF](paper/preprint.pdf)) together with the Sen1Floods11 and Prithvi-EO 2.0 papers:
+If this work is useful, please cite the preprint ([doi:10.5281/zenodo.23105700](https://doi.org/10.5281/zenodo.23105700)) together with the Sen1Floods11 and Prithvi-EO 2.0 papers:
 
 ```bibtex
 @misc{sariyerli2026eofloods,
   title  = {How Much Do Earth-Observation Foundation Models Help Flood Mapping When Labels Are Scarce? Frozen, LoRA and Full Fine-Tuning of Prithvi-EO 2.0 on Sen1Floods11},
   author = {Sar{\i}yerli, Mert Semih},
   year   = {2026},
+  publisher = {Zenodo},
   note   = {Preprint},
-  url    = {https://github.com/mertsemih/eo-foundation-flood}
+  doi    = {10.5281/zenodo.23105700},
+  url    = {https://doi.org/10.5281/zenodo.23105700}
 }
 ```
 
